@@ -144,10 +144,10 @@ public class GraphFragment extends Fragment  {
         boolean checked = ((CheckBox) view).isChecked();
         Object ob = ((CheckBox) view).getTag();
         int tag = Integer.valueOf(ob.toString());
-        if (tag<=0)
+        if (tag <= 0)
             throw new UnsupportedOperationException("Selected linedataset doesnt exists");
 
-        ((LineDataSet) dataSets.get(tag-1)).setVisible(checked);
+        ((LineDataSet) dataSets.get(tag - 1)).setVisible(checked);
         chart.invalidate();
     }
 
@@ -176,30 +176,30 @@ public class GraphFragment extends Fragment  {
            dmd.getMessageContainerGraph().removeObservers(getViewLifecycleOwner());
         });
 
-        CheckBox cbT1 = binding.vT1;
-        cbT1.setChecked(true);
-        cbT1.setOnClickListener(view -> {
-           DoBtnClick(view);
-        });
+//        CheckBox cbT1 = binding.vT1;
+//        cbT1.setChecked(true);
+//        cbT1.setOnClickListener(view -> {
+//           DoBtnClick(view);
+//        });
 
 
-        CheckBox cbT2 = binding.vT2;
-        cbT2.setChecked(true);
-        cbT2.setOnClickListener(view -> {
-            DoBtnClick(view);
-        });
+//        CheckBox cbT2 = binding.vT2;
+//        cbT2.setChecked(true);
+//        cbT2.setOnClickListener(view -> {
+//            DoBtnClick(view);
+//        });
 
-        CheckBox cbT3 = binding.vT3;
-        cbT3.setChecked(true);
-        cbT3.setOnClickListener(view -> {
-            DoBtnClick(view);
-        });
+//        CheckBox cbT3 = binding.vT3;
+//        cbT3.setChecked(true);
+//        cbT3.setOnClickListener(view -> {
+//            DoBtnClick(view);
+//        });
 
-        CheckBox cbHum = binding.vHum;
-        cbHum.setChecked(true);
-        cbHum.setOnClickListener(view -> {
-            DoBtnClick(view);
-        });
+//        CheckBox cbHum = binding.vHum;
+//        cbHum.setChecked(true);
+//        cbHum.setOnClickListener(view -> {
+//            DoBtnClick(view);
+//        });
 
 
         getActivity().setTitle("Lolly 4");

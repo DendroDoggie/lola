@@ -59,10 +59,10 @@ import java.time.format.DateTimeFormatter;
 
 public class HomeFragment extends Fragment {
     static final byte MIN_ADANUMBER = 5;  // pozaduju, aby mel adapter minimalne 5 znaku
-    private final String FILEPATH= Constants.FILEDIR ; //"/storage/emulated/0/Documents/";
+    private final String FILEPATH = Constants.FILEDIR; // "/storage/emulated/0/Documents/";
     private FragmentHomeBinding binding;
     private long MaxPos;
-    //private Context DeviceUARTContext;
+    // private Context DeviceUARTContext;
 
     private CSVReader csv;
     // private TMSReader ftTMS;
@@ -76,7 +76,7 @@ public class HomeFragment extends Fragment {
 
     private final int openIndex = 0;
 
-    private boolean bReadThreadGoing=false;
+    private boolean bReadThreadGoing = false;
 
     public com.tomst.lolly.core.uHer fHer;
 
@@ -94,7 +94,7 @@ public class HomeFragment extends Fragment {
     };
 
     private int fAddr;
-    private int progressBarStatus=0;
+    private int progressBarStatus = 0;
 
     private  DmdViewModel dmd;
 
@@ -137,7 +137,7 @@ public class HomeFragment extends Fragment {
 
         if (odometer != null)
             odometer.SetServiceState(TDevState.tStart);
-        //ConnectDevice();
+        // ConnectDevice();
      };
 
      @Override
@@ -194,9 +194,9 @@ public class HomeFragment extends Fragment {
     private String CompileFileName(String Serial){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd").withZone(ZoneId.of("UTC"));
         LocalDateTime localDateTime = LocalDateTime.now();
-        int idx=0;
+        int idx = 0;
         boolean bex = false;
-        while ( (bex = FileExists(Serial,localDateTime,idx)) == true){
+        while ((bex = FileExists(Serial,localDateTime,idx)) == true){
             idx++;
         }
 
