@@ -8,6 +8,7 @@ import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -176,31 +177,23 @@ public class GraphFragment extends Fragment  {
            dmd.getMessageContainerGraph().removeObservers(getViewLifecycleOwner());
         });
 
-//        CheckBox cbT1 = binding.vT1;
-//        cbT1.setChecked(true);
-//        cbT1.setOnClickListener(view -> {
-//           DoBtnClick(view);
-//        });
+        Button addLayer_btn = binding.addLayer;
+        addLayer_btn.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                Log.d("BUTTONS", "User pressed Add Layer button!");
+            }
+        });
 
-
-//        CheckBox cbT2 = binding.vT2;
-//        cbT2.setChecked(true);
-//        cbT2.setOnClickListener(view -> {
-//            DoBtnClick(view);
-//        });
-
-//        CheckBox cbT3 = binding.vT3;
-//        cbT3.setChecked(true);
-//        cbT3.setOnClickListener(view -> {
-//            DoBtnClick(view);
-//        });
-
-//        CheckBox cbHum = binding.vHum;
-//        cbHum.setChecked(true);
-//        cbHum.setOnClickListener(view -> {
-//            DoBtnClick(view);
-//        });
-
+        Button export_btn = binding.export;
+        export_btn.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                Log.d("BUTTONS", "User pressed Export button!");
+            }
+        });
 
         getActivity().setTitle("Lolly 4");
         chart = binding.chart1;
