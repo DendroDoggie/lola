@@ -77,6 +77,8 @@
     <string name="versionName">Version</string>
     <string name="version_unknown">Unknown</string>
     <string name="dash_text">,</string>
+    <string name="add_layer">Add Layer</string>
+    <string name="export">Export</string>
 
 
     <string-array name="friends">

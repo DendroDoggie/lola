@@ -4,6 +4,8 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
         android:orientation="vertical"
         tools:context=".ui.graph.GraphFragment">
 
@@ -11,7 +13,6 @@
             android:id="@+id/chart1"
             android:layout_width="1000dp"
             android:layout_height="500dp"
-            android:backgroundTint="#c9c9c9"
             android:textAlignment="center"/>
 
         <LinearLayout
@@ -21,25 +22,22 @@
 
                 <Button
                     android:id="@+id/add_layer"
-                    android:layout_width="100dp"
-                    android:layout_height="50dp"
-                    android:text="Add Layer"
-                    android:textAlignment="center">
-                </Button>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/add_layer"
+                    android:textAlignment="center"/>
 
                 <Button
-                    android:id="@+id/export_vis"
-                    android:layout_width="100dp"
-                    android:layout_height="50dp"
-                    android:text="Export"
-                    android:textAlignment="center"></Button>
+                    android:id="@+id/export"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="150dp"
+                    android:text="@string/export"
+                    android:textAlignment="center"/>
         </LinearLayout>
 
         <ProgressBar
             android:id="@+id/proBar"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:backgroundTint="#c9c9c9"
-            android:foregroundTint="#00ff00">
-        </ProgressBar>
+            android:layout_height="50dp"/>
 </LinearLayout>
