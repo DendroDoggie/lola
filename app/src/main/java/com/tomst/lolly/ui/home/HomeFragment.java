@@ -163,7 +163,6 @@ public class HomeFragment extends Fragment {
         getContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
      }
 
-
      public void LogMsg(String msg)
     {
         binding.mShowCount.append(msg+"\n");
@@ -284,11 +283,9 @@ public class HomeFragment extends Fragment {
                     break;
 
                 case tInfo:
-
                     binding.devt1.setText(String.valueOf(info.t1));
                     binding.devt2.setText(String.valueOf(info.t2));
                     binding.devt3.setText(String.valueOf(info.t3));
-
                     break;
 
                 case tCapacity:
@@ -312,7 +309,7 @@ public class HomeFragment extends Fragment {
                     float delta = Float.valueOf(info.msg);
                     String deltas = String.format("%.1f", delta/1000.0);
                     binding.diffTime.setText(deltas);
-                   break;
+                    break;
 
                 case tReadMeteo:
                     // popiska modu

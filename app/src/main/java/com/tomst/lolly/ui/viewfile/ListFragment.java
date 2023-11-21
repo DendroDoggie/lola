@@ -77,11 +77,10 @@ public class ListFragment extends Fragment {
 
     List<FileDetail> fFriends = null;
 
-    public ListFragment(){
+    public ListFragment() {
         //executor = new ScheduledThreadPoolExecutor(1);
         //fopen = new FileOpener(this);
     }
-
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -180,8 +179,6 @@ public class ListFragment extends Fragment {
         View view = bottomNavigationView.findViewById(R.id.navigation_graph);
         view.performClick();
     }
-
-
 
     private void setupDriveList(final File[] rootDirectories) {
         //final LinearLayout list = rootView.findViewById(R.id.drive_list);
@@ -444,8 +441,6 @@ public class ListFragment extends Fragment {
         });
          */
     }
-
-
 
     private List<FileDetail> setFiles(String path){
 

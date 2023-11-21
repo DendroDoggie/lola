@@ -1,5 +1,6 @@
 package com.tomst.lolly.ui.graph;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.util.Log;
@@ -18,9 +20,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.Legend;
@@ -39,11 +43,14 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import com.tomst.lolly.core.CSVReader;
 import com.tomst.lolly.core.Constants;
 import com.tomst.lolly.core.OnProListener;
+import com.tomst.lolly.R;
 import com.tomst.lolly.core.TMereni;
 import com.tomst.lolly.core.TPhysValue;
 import com.tomst.lolly.databinding.FragmentGraphBinding;
 import com.tomst.lolly.core.DmdViewModel;
-
+import com.tomst.lolly.databinding.FragmentViewerBinding;
+import com.tomst.lolly.ui.viewfile.ListFragment;
+import com.tomst.lolly.ui.viewfile.ListViewModel;
 
 public class GraphFragment extends Fragment  {
 
@@ -63,6 +70,9 @@ public class GraphFragment extends Fragment  {
             ColorTemplate.VORDIPLOM_COLORS[2]
     };
 
+    // stores reference to applications FragmentManager for use throughout the
+    // class -- revisit if there are only a few uses
+    private FragmentManager myFragmentManager;
     private FragmentGraphBinding binding;
 
     private  DmdViewModel dmd;
@@ -99,7 +109,6 @@ public class GraphFragment extends Fragment  {
 
         super.onStop();
     }
-
 
     private void LoadCsvFile(String AFileName){
         if (AFileName == "")
@@ -158,9 +167,19 @@ public class GraphFragment extends Fragment  {
         super.onCreate(savedInstanceState);
     }
 
+    private void switchToListFragment()
+    {
+        myFragmentManager.beginTransaction()
+                .replace(this.getId(), ListFragment.class, null)
+                .setReorderingAllowed(true)
+                .addToBackStack(null)  // allows for a back button
+                .commit();
+    }
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
+        myFragmentManager = getParentFragmentManager();
         GraphViewModel readerViewModel =  new ViewModelProvider(this).get(GraphViewModel.class);
         binding = FragmentGraphBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
@@ -183,6 +202,7 @@ public class GraphFragment extends Fragment  {
             public void onClick(View v)
             {
                 Log.d("BUTTONS", "User pressed Add Layer button!");
+                switchToListFragment();
             }
         });
 

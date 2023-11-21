@@ -15,7 +15,7 @@ import java.util.List;
 
 public class FileViewerAdapter extends BaseAdapter{
     private final Context mContext;
-    private List<FileDetail> mAllFiles ;//= Collections.EMPTY_LIST;
+    private List<FileDetail> mAllFiles;//= Collections.EMPTY_LIST;
 
     public FileViewerAdapter(Context mContext, List<FileDetail> mAllFiles){
         this.mContext = mContext;
@@ -71,5 +71,4 @@ public class FileViewerAdapter extends BaseAdapter{
     public String getFullName(int position){
         return mAllFiles.get(position).getFull();
     }
-
 }
