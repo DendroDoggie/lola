@@ -172,7 +172,7 @@ public class GraphFragment extends Fragment  {
         myFragmentManager.beginTransaction()
                 .replace(this.getId(), ListFragment.class, null)
                 .setReorderingAllowed(true)
-                .addToBackStack(null)  // allows for a back button
+                .addToBackStack("graphFragment")  // allows for a back button
                 .commit();
     }
 
@@ -199,7 +199,7 @@ public class GraphFragment extends Fragment  {
         Button addLayer_btn = binding.addLayer;
         addLayer_btn.setOnClickListener(new View.OnClickListener()
         {
-            public void onClick(View v)
+            public void onClick(View view)
             {
                 Log.d("BUTTONS", "User pressed Add Layer button!");
                 switchToListFragment();

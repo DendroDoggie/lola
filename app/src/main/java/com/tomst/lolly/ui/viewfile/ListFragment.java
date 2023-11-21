@@ -27,6 +27,7 @@ import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -43,6 +44,7 @@ import com.tomst.lolly.fileview.FileViewerAdapter;
 import com.tomst.lolly.core.PermissionManager;
 
 import com.tomst.lolly.BuildConfig;
+import com.tomst.lolly.ui.graph.GraphFragment;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -82,6 +84,13 @@ public class ListFragment extends Fragment {
         //fopen = new FileOpener(this);
     }
 
+    // maybe this should be part of all the fragments?
+    private void previousFragment()
+    {
+        getParentFragmentManager()
+                .popBackStack("graphFragment", FragmentManager.POP_BACK_STACK_INCLUSIVE);
+    }
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         ListViewModel listViewModel =
@@ -91,9 +100,9 @@ public class ListFragment extends Fragment {
         //View rootView = binding.getRoot();
         rootView = binding.getRoot();
 
-        Button btn = binding.buttonZipall;
-        btn.setText("Upload Zip");
-        btn.setOnClickListener(new View.OnClickListener() {
+        Button zip_btn = binding.zipButton;
+        zip_btn.setText("Upload Zip");
+        zip_btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 //Log.d("BUTTONS", "User tapped the Supabutton");
                 ZipFiles zipFiles = new ZipFiles();
@@ -133,6 +142,14 @@ public class ListFragment extends Fragment {
         //List<FileDetail> fFriends = new ArrayList<>();
         fFriends = new ArrayList<>();
 
+        Button back_btn = binding.listBack;
+        back_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                previousFragment();
+            }
+        });
+
         Intent intent = getActivity().getIntent();
         switch (intent.getAction()){
             case Intent.ACTION_GET_CONTENT:
@@ -155,7 +172,7 @@ public class ListFragment extends Fragment {
     }
 
     private void loadAllFiles(){
-        ListView mListView = (ListView) rootView.findViewById(R.id.listView);
+        ListView mListView = (ListView) rootView.findViewById(R.id.list_view);
 
         // 2. vytvoreni adapteru
         final FileViewerAdapter friendsAdapter = new FileViewerAdapter(getContext(), fFriends);
@@ -342,7 +359,7 @@ public class ListFragment extends Fragment {
                 lastLetter = "";
                 boolean hasFiles = false;
                 boolean showFile = false;
-                for (File item : items)
+                for (File item : items) {
                     if (item.isFile()) {
                         if (!hasFiles) {
                             addDialog("Files:", 18);
@@ -355,8 +372,9 @@ public class ListFragment extends Fragment {
                         }
 
                         showFile = item.getName().contains(".csv"); //|| item.getName().contains(".zip");
-                        if (!showFile)
-                          continue;
+                        if (!showFile) {
+                            continue;
+                        }
 
                         switch (getFileType(item).split("/")[0]) {
                             case "image":
@@ -369,10 +387,11 @@ public class ListFragment extends Fragment {
                                 addItem(R.drawable.audio, item);
                                 break;   //addItem(getImageView(audioImage), item);
                             case "application": {
-                                if (getFileType(item).contains("application/octet-stream"))
+                                if (getFileType(item).contains("application/octet-stream")) {
                                     addItem(R.drawable.unknown, item);//addItem(getImageView(unknownImage), item);
-                                else
+                                } else {
                                     addItem(R.drawable.archive, item);//addItem(getImageView(archiveImage), item);
+                                }
                                 break;
                             }
                             case "text": {
@@ -384,20 +403,28 @@ public class ListFragment extends Fragment {
                                 addItem(R.drawable.unknown, item);
                                 break; //addItem(getImageView(unknownImage), item);
                         }
-
                     }
+                }
             }
-        } else {
-            if (filePath.contains("Android/data") || filePath.contains("Android/obb")) {
+        }
+        else
+        {
+            if (filePath.contains("Android/data") || filePath.contains("Android/obb"))
+            {
                 addDialog("For android 11 or higher, Android/data and Android/obb is refused access.\n", 16);
-            } else addDialog("Access Denied", 16);
+            }
+            else
+            {
+                addDialog("Access Denied", 16);
+            }
         }
        // runOnUiThread(() -> ll.removeView(findViewById(LOADING_VIEW_ID)));
     }
 
 
     @Override
-    public void onStart(){
+    public void onStart()
+    {
         super.onStart();
 
         File[] rootDirectories = FileOperation.getAllStorages(getContext());
@@ -407,17 +434,23 @@ public class ListFragment extends Fragment {
         //File[] rootDirectories = directory.listFiles();
         File rootDir = new File(filePath);
         if (rootDir.isFile())
+        {
             rootDir = rootDir.getParentFile();
+        }
 
 
         setupDriveList(rootDirectories);
 
-        if (filePath != null) {
+        if (filePath != null)
+        {
             if (checkPermission())
                 listItem(rootDir);
                 //listItem(new File(filePath));
-        } else {
-            for (File folder : rootDirectories) {
+        }
+        else
+        {
+            for (File folder : rootDirectories)
+            {
                 if (checkPermission())
                      listItem(folder);
                 break;
@@ -442,14 +475,16 @@ public class ListFragment extends Fragment {
          */
     }
 
-    private List<FileDetail> setFiles(String path){
+    private List<FileDetail> setFiles(String path)
+    {
 
         List<FileDetail> fil = new ArrayList<>();
 
         File directory = new File(path);
         File[] files = directory.listFiles();
 
-        for (File pathname : files){
+        for (File pathname : files)
+        {
             System.out.println(pathname);
         }
 
@@ -457,8 +492,8 @@ public class ListFragment extends Fragment {
     };
 
 
-    private List<FileDetail> setFriends() {
-
+    private List<FileDetail> setFriends()
+    {
         String[] names = getResources().getStringArray(R.array.friends);
         int[] iconID = {
                 R.drawable.ic_mood_white_24dp,
@@ -472,7 +507,8 @@ public class ListFragment extends Fragment {
 
         List<FileDetail> friends = new ArrayList<>();
 
-        for (int i = 0; i < names.length; i++) {
+        for (int i = 0; i < names.length; i++)
+        {
             friends.add(new FileDetail(names[i], iconID[i]));
         }
 
@@ -500,7 +536,8 @@ public class ListFragment extends Fragment {
 
 
     @Override
-    public void onDestroyView() {
+    public void onDestroyView()
+    {
         super.onDestroyView();
         binding = null;
     }
