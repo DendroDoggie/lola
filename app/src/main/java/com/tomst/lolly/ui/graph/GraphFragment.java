@@ -507,6 +507,10 @@ public class GraphFragment extends Fragment
         {
             CSVFile.delete(mergedFileName);
         }
+        else if (CSVFile.exists(tempFileName))
+        {
+            CSVFile.delete(tempFileName);
+        }
 
         int dataSetCnt = 0;
         String header = "";
@@ -546,7 +550,7 @@ public class GraphFragment extends Fragment
         }
         mergedFile.close();
         tempFile.close();
-        CSVFile.delete(parentDir + "temp.csv");
+        CSVFile.delete(tempFileName);
 
         return mergedFileName;
     }
