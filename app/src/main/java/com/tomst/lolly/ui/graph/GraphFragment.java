@@ -495,28 +495,6 @@ public class GraphFragment extends Fragment
         chart.setViewPortOffsets(0f, 0f, 0f, 0f);
         // if disabled, scaling can be done on x- and y-axis separately
         chart.setPinchZoom(false);
-        // get the legend (only possible after setting data)
-//        Legend l = chart.getLegend();
-
-//        l.setWordWrapEnabled(true);
-        /*
-        l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
-        l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-        l.setDrawInside(false);
-        l.setEnabled(false);
-        */
-//        l.setForm(Legend.LegendForm.LINE);
-//        l.setFormSize(100f);
-        //l.setTypeface(tfLight);
-//        l.setTextSize(11f);
-//        l.setTextColor(Color.BLACK);
-//        l.setXEntrySpace(200f);  //makes legend a column
-//        l.setYEntrySpace(1f);
-//        l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-//        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
-//        l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-//        l.setDrawInside(true);
 
         // osa humidit
         YAxis rightAxis = chart.getAxisRight();
