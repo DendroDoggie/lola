@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.LegendEntry;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -47,6 +48,7 @@ import com.tomst.lolly.core.CSVFile;
 import com.tomst.lolly.core.Constants;
 import com.tomst.lolly.core.OnProListener;
 import com.tomst.lolly.core.TDendroInfo;
+import com.tomst.lolly.core.TDeviceType;
 import com.tomst.lolly.core.TMereni;
 import com.tomst.lolly.core.TPhysValue;
 import com.tomst.lolly.databinding.FragmentGraphBinding;
@@ -89,9 +91,11 @@ public class GraphFragment extends Fragment
 
 
     // graphing
+    private int DEVICE_TYPE = 0;  // need enum
     private CombinedChart chart;
     private CombinedData combinedData;
     private int colorStep = 0;
+
 
     private SeekBar seekBarX;
     private TextView tvX;
@@ -149,7 +153,7 @@ public class GraphFragment extends Fragment
         LineData lines;
 
         headerIndex = 0;
-        colorStep=0;
+        colorStep = 0;
         do
         {
             // line graph
@@ -187,7 +191,56 @@ public class GraphFragment extends Fragment
                 chart.getAxisLeft().getAxisDependency(), 3000
         );
 
+        formLegend(chart.getLegend());
+        Log.d(
+                "GRAPH",
+                "Num legend entries: "
+                        + chart.getLegend().getEntries().length
+        );
         headerIndex = ogHeaderIndex;
+    }
+
+
+    private void formLegend(Legend legend)
+    {
+        ArrayList<LegendEntry> entries = new ArrayList<LegendEntry>();
+        TDendroInfo dendroInfo = dendroInfos.get(0);
+
+        switch (DEVICE_TYPE)
+        {
+            case 0:  // DENDROMETER
+                float[] temp_intervals = {1.0f, 10.0f};
+                LegendEntry t1_entry = new LegendEntry(
+                        "Temp1",
+                        Legend.LegendForm.LINE,
+                        100.0f,
+                        5.0f,
+                        new DashPathEffect(temp_intervals, 5.0f),
+                        Color.rgb(0, 0, 0)
+                );
+                float[] growth_intervals = {1.0f, 1.0f};
+                LegendEntry growth_entry = new LegendEntry(
+                        "Growth",
+                        Legend.LegendForm.LINE,
+                        100.0f,
+                        5.0f,
+                        new DashPathEffect(growth_intervals, 0.0f),
+                        Color.rgb(0, 0, 0)
+                );
+                entries.add(t1_entry);
+                entries.add(growth_entry);
+                break;
+
+            default:  // UNKNOWN
+                break;
+        }
+
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setCustom(entries);
+        legend.setXEntrySpace(200f);  // for column formatting
+        legend.setYEntrySpace(1f);
     }
 
 
@@ -224,11 +277,15 @@ public class GraphFragment extends Fragment
         while ((currentLine = csv.readLine()) != "")
         {
             TMereni mer = processLine(currentLine);
+            if (mer.t2 > 0 && mer.t3 > 0)
+            {
+                DEVICE_TYPE = 0;
+            }
 
             if (mer.Serial != null)
             {
                 headerIndex++;
-                valueIndex=0;
+                valueIndex = 0;
                 if (headerIndex < numDataSets)
                 {
                     dendroInfos.get(headerIndex).serial = mer.Serial;
@@ -431,9 +488,9 @@ public class GraphFragment extends Fragment
         // if disabled, scaling can be done on x- and y-axis separately
         chart.setPinchZoom(false);
         // get the legend (only possible after setting data)
-        Legend l = chart.getLegend();
+//        Legend l = chart.getLegend();
 
-        l.setWordWrapEnabled(true);
+//        l.setWordWrapEnabled(true);
         /*
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
@@ -441,17 +498,17 @@ public class GraphFragment extends Fragment
         l.setDrawInside(false);
         l.setEnabled(false);
         */
-        l.setForm(Legend.LegendForm.LINE);
-        l.setFormSize(100f);
+//        l.setForm(Legend.LegendForm.LINE);
+//        l.setFormSize(100f);
         //l.setTypeface(tfLight);
-        l.setTextSize(11f);
-        l.setTextColor(Color.BLACK);
-        l.setXEntrySpace(200f);  //makes legend a column
-        l.setYEntrySpace(1f);
-        l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
-        l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-        l.setDrawInside(true);
+//        l.setTextSize(11f);
+//        l.setTextColor(Color.BLACK);
+//        l.setXEntrySpace(200f);  //makes legend a column
+//        l.setYEntrySpace(1f);
+//        l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+//        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
+//        l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+//        l.setDrawInside(true);
 
         // osa humidit
         YAxis rightAxis = chart.getAxisRight();
@@ -559,7 +616,8 @@ public class GraphFragment extends Fragment
     @RequiresApi(api = Build.VERSION_CODES.O)
     private LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
     {
-        int colorStep=127;   // 255/2=127  3 colors (0,127,254) in each rgb value
+        // 255/2=127  3 colors (0,127,254) in each rgb value
+        int colorStep = 127;
 
         //LineData d = new LineData();
         LineDataSet set =
@@ -573,7 +631,7 @@ public class GraphFragment extends Fragment
         set.setLabel(val.valToString(val));
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
 
-        //differentiating datasets by color (supports max 9 datasets)
+        // differentiating datasets by color (supports max 9 datasets)
         if (numDataSets > 3)
         {
             if (headerIndex < 3) {
@@ -584,7 +642,7 @@ public class GraphFragment extends Fragment
                 set.setColor(Color.rgb(0, 127, (headerIndex - 6) * colorStep));
             }
         }
-        else     //maximum color differential for 1 to 3 datasets
+        else  // maximum color differential for 1 to 3 datasets
         {
             if (headerIndex == 0)
             {
@@ -634,7 +692,6 @@ public class GraphFragment extends Fragment
             default:
                 throw new UnsupportedOperationException("Not yet implemented");
         }
-
 
         return set;
     }
