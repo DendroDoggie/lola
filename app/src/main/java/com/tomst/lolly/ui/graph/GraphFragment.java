@@ -203,29 +203,31 @@ public class GraphFragment extends Fragment
 
     private void formLegend(Legend legend)
     {
+        final float formSize = 50.0f;
+        final float formLineWidth = 8.0f;
+
         ArrayList<LegendEntry> entries = new ArrayList<LegendEntry>();
         TDendroInfo dendroInfo = dendroInfos.get(0);
 
         switch (DEVICE_TYPE)
         {
             case 0:  // DENDROMETER
-                float[] temp_intervals = {1.0f, 10.0f};
+                float[] temp_intervals = {5.0f, 15.0f};
                 LegendEntry t1_entry = new LegendEntry(
                         "Temp1",
                         Legend.LegendForm.LINE,
-                        100.0f,
-                        5.0f,
+                        formSize,
+                        formLineWidth,
                         new DashPathEffect(temp_intervals, 5.0f),
-                        Color.rgb(0, 0, 0)
+                        Color.DKGRAY
                 );
-                float[] growth_intervals = {1.0f, 1.0f};
                 LegendEntry growth_entry = new LegendEntry(
                         "Growth",
                         Legend.LegendForm.LINE,
-                        100.0f,
-                        5.0f,
-                        new DashPathEffect(growth_intervals, 0.0f),
-                        Color.rgb(0, 0, 0)
+                        formSize,
+                        formLineWidth,
+                        null,
+                        Color.DKGRAY
                 );
                 entries.add(t1_entry);
                 entries.add(growth_entry);
@@ -235,12 +237,18 @@ public class GraphFragment extends Fragment
                 break;
         }
 
+        legend.setWordWrapEnabled(true);
         legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(true);
+
+        // make legend a column - don't know from where 200 came, however
+        legend.setXEntrySpace(200.0f);
+        legend.setYEntrySpace(6.0f);
+        legend.setTextSize(16.0f);
+
         legend.setCustom(entries);
-        legend.setXEntrySpace(200f);  // for column formatting
-        legend.setYEntrySpace(1f);
     }
 
 
