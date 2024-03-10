@@ -2,6 +2,8 @@ package com.tomst.lolly.ui.graph;
 
 
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,9 +19,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import com.github.mikephil.charting.animation.Easing;
@@ -41,6 +46,7 @@ import com.tomst.lolly.core.CSVReader;
 import com.tomst.lolly.core.CSVFile;
 import com.tomst.lolly.core.Constants;
 import com.tomst.lolly.core.OnProListener;
+import com.tomst.lolly.core.TDendroInfo;
 import com.tomst.lolly.core.TMereni;
 import com.tomst.lolly.core.TPhysValue;
 import com.tomst.lolly.databinding.FragmentGraphBinding;
@@ -52,14 +58,44 @@ import java.io.File;
 
 public class GraphFragment extends Fragment
 {
+    // constants for loading CSV files
+    private static final String DATE_PATTERN = "dd.MM.yyyy HH:mm";
+    private static final byte SERIAL_INDEX = 0;
+    private static final byte LONGITUDE_INDEX = 1;
+    private static final byte LATITUDE_INDEX = 2;
+    private static final byte PICTURE_INDEX = 4;
+
+
+    // constants for merging CSV files
+    private static final int HEADER_LINE_LENGTH = 3;
+
+    // constants for loading measurements
+    private static final byte TEMP1_INDEX = 3;
+    private static final byte TEMP2_INDEX = 4;
+    private static final byte TEMP3_INDEX = 5;
+    private static final byte HUMIDITY_INDEX = 6;
+    private static final byte MVS_INDEX = 7;
+
+
+    // CSV loading
+    public int headerIndex = 0;
+    public int numDataSets = 0;
+
+
+    // visualization data holders
     private final int barCount = 12;
+    private ArrayList<ILineDataSet> dataSets = new ArrayList<>();
+    private ArrayList<TDendroInfo> dendroInfos = new ArrayList<>();
+
+
+    // graphing
     private CombinedChart chart;
     private CombinedData combinedData;
-
-    private ArrayList<ILineDataSet> dataSets = new ArrayList<>();
+    private int colorStep = 0;
 
     private SeekBar seekBarX;
     private TextView tvX;
+
 
     private final int[] colors = new int[] {
             ColorTemplate.VORDIPLOM_COLORS[0],
@@ -71,14 +107,7 @@ public class GraphFragment extends Fragment
 
     private  DmdViewModel dmd;
 
-    private  CSVReader csv;
-    
-    private ArrayList<Entry> vT1 = new ArrayList<>();
-    private ArrayList<Entry> vT2 = new ArrayList<>();
-    private ArrayList<Entry> vT3 = new ArrayList<>();
-    private ArrayList<Entry> vHA = new ArrayList<>();
-
-    private Integer fIdx=0;
+    private Integer fIdx = 0;
 
 
     protected Handler handler = new Handler(Looper.getMainLooper())
@@ -112,9 +141,171 @@ public class GraphFragment extends Fragment
     }
 
 
-    private void LoadCSVFile(String fileName)
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void DisplayData()
     {
-        // refill
+        int ogHeaderIndex = headerIndex;
+        LineDataSet d = null;
+        LineData lines;
+
+        headerIndex = 0;
+        colorStep=0;
+        do
+        {
+            // line graph
+            d = SetLine(dendroInfos.get(headerIndex).vT1, TPhysValue.vT1);
+            dataSets.add(d);
+            //d = SetLine(dendroInfos.get(headerIndex).vT2, TPhysValue.vT2);
+            //dataSets.add(d);
+            //d = SetLine(dendroInfos.get(headerIndex).vT3, TPhysValue.vT3);
+            //dataSets.add(d);
+            // humidity
+            d = SetLine(dendroInfos.get(headerIndex).vHA, TPhysValue.vHum);
+            dataSets.add(d);
+            lines = new LineData(dataSets);
+            combinedData.setData(lines);
+
+            // combinedData.setData(generateBarData());
+            chart.setData(combinedData);
+            chart.getAxisLeft().setEnabled(true);
+            chart.getAxisRight().setEnabled(true);
+
+            // startup animation
+            chart.animateX(2000, Easing.EaseInCubic);
+
+            //refresh datasets array??
+
+            headerIndex++;
+            colorStep += 255 / numDataSets;
+        }
+        while (headerIndex < numDataSets);
+
+        // sets view to start of graph and zooms into x axis by 7x
+        chart.zoomAndCenterAnimated(
+                7f, 1f,
+                0, 0,
+                chart.getAxisLeft().getAxisDependency(), 3000
+        );
+
+        headerIndex = ogHeaderIndex;
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void loadCSVFile(String fileName)
+    {
+        long valueIndex = 0;
+        String currentLine = "";
+        CSVFile csv = CSVFile.open(fileName, CSVFile.READ_MODE);
+
+        // count data sets
+        currentLine = csv.readLine();
+        numDataSets = Integer.parseInt(currentLine.split(";")[0]);
+
+        // read file header
+        while (headerIndex < numDataSets)
+        {
+            currentLine = csv.readLine();
+            String[] lineOfFile = currentLine.split(";");
+
+            String serial = lineOfFile[SERIAL_INDEX];
+            Long longitude = Long.parseLong(lineOfFile[LONGITUDE_INDEX]);
+            Long latitude = Long.parseLong(lineOfFile[LATITUDE_INDEX]);
+            TDendroInfo dendroInfo = new TDendroInfo(
+                    serial, longitude, latitude
+            );
+            dendroInfos.add(headerIndex, dendroInfo);
+
+            headerIndex++;
+        }
+
+        // read data
+        headerIndex = -1;
+        while ((currentLine = csv.readLine()) != "")
+        {
+            TMereni mer = processLine(currentLine);
+
+            if (mer.Serial != null)
+            {
+                headerIndex++;
+                valueIndex=0;
+                if (headerIndex < numDataSets)
+                {
+                    dendroInfos.get(headerIndex).serial = mer.Serial;
+                }
+            }
+            else
+            {
+                dendroInfos.get(headerIndex).mers.add(mer);
+                dendroInfos.get(headerIndex).vT1.add(
+                        new Entry(valueIndex, (float) mer.t1)
+                );
+                dendroInfos.get(headerIndex).vT2.add(
+                        new Entry(valueIndex, (float) mer.t2)
+                );
+                dendroInfos.get(headerIndex).vT3.add(
+                        new Entry(valueIndex, (float) mer.t3)
+                );
+                dendroInfos.get(headerIndex).vHA.add(
+                        new Entry(valueIndex, (float) mer.hum)
+                );
+
+                valueIndex++;
+            }
+        }
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private TMereni processLine(String line)
+    {
+        int currDay = 0;
+        String[] lineOfFile = line.split(";");
+        LocalDateTime dateTime = null;
+        LocalDateTime currDate;
+
+        TMereni mer = new TMereni();
+        if (lineOfFile.length == 1)
+        {
+            mer.Serial = lineOfFile[SERIAL_INDEX];
+        }
+        else
+        {
+            /*   THIS DOESNT WORK ALSO USELESS AS OF NOW
+            try
+            {
+                DateTimeFormatter formatter =
+                        DateTimeFormatter.ofPattern(DATE_PATTERN);
+                dateTime = LocalDateTime.parse(lineOfFile[1], formatter);
+                mer.dtm = dateTime;
+                mer.day = dateTime.getDayOfMonth();
+                System.out.println(mer.dtm);
+                System.out.println(mer.day);
+            }
+            catch (Exception e)
+            {
+                System.out.println(e);
+            }
+            */
+            // replaces all occurrences of 'a' to 'e'
+            String T1 = lineOfFile[TEMP1_INDEX]
+                    .replace(',', '.');
+            // replaces all occurrences of 'a' to 'e'
+            String T2 = lineOfFile[TEMP2_INDEX]
+                    .replace(',', '.');
+            // replaces all occurrences of 'a' to 'e'
+            String T3 = lineOfFile[TEMP3_INDEX]
+                    .replace(',', '.');
+
+            mer.Serial = null;
+            mer.t1 = Float.parseFloat(T1);
+            mer.t2 = Float.parseFloat(T2);
+            mer.t3 = Float.parseFloat(T3);
+            mer.hum = Integer.parseInt(lineOfFile[HUMIDITY_INDEX]);
+            mer.mvs = Integer.parseInt(lineOfFile[MVS_INDEX]);
+        }
+
+        return mer;
     }
 
 
@@ -123,14 +314,14 @@ public class GraphFragment extends Fragment
         boolean checked = ((CheckBox) view).isChecked();
         Object ob = ((CheckBox) view).getTag();
         int tag = Integer.valueOf(ob.toString());
-        if (tag<=0)
+        if (tag <= 0)
         {
             throw new UnsupportedOperationException(
                     "Selected line dataset doesn't exists"
             );
         }
 
-        ((LineDataSet) dataSets.get(tag-1)).setVisible(checked);
+        ((LineDataSet) dataSets.get(tag - 1)).setVisible(checked);
         chart.invalidate();
     }
 
@@ -143,6 +334,7 @@ public class GraphFragment extends Fragment
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public View onCreateView(
             @NonNull LayoutInflater inflater,
             ViewGroup container,
@@ -182,11 +374,13 @@ public class GraphFragment extends Fragment
                                             + mergedFileName
                             );
 
-//                            LoadCsvFile(mergedFileName);
+                            loadCSVFile(mergedFileName);
+                            DisplayData();
                         }
                         else
                         {
-                            LoadCSVFile(fileNames[0]);
+                            loadCSVFile(fileNames[0]);
+                            DisplayData();
                         }
                     }
 
@@ -221,7 +415,6 @@ public class GraphFragment extends Fragment
 
         getActivity().setTitle("Lolly 4");
         chart = binding.chart1;
-
         // chart.getDescription().setText(CsvFileName);
         chart.setTouchEnabled(true);
         chart.setDragDecelerationFrictionCoef(0.9f);
@@ -239,8 +432,9 @@ public class GraphFragment extends Fragment
         chart.setPinchZoom(false);
         // get the legend (only possible after setting data)
         Legend l = chart.getLegend();
-        /*
+
         l.setWordWrapEnabled(true);
+        /*
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
         l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
@@ -248,9 +442,12 @@ public class GraphFragment extends Fragment
         l.setEnabled(false);
         */
         l.setForm(Legend.LegendForm.LINE);
+        l.setFormSize(100f);
         //l.setTypeface(tfLight);
         l.setTextSize(11f);
         l.setTextColor(Color.BLACK);
+        l.setXEntrySpace(200f);  //makes legend a column
+        l.setYEntrySpace(1f);
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
@@ -258,7 +455,7 @@ public class GraphFragment extends Fragment
 
         // osa humidit
         YAxis rightAxis = chart.getAxisRight();
-        rightAxis.setDrawGridLines(true);
+        rightAxis.setDrawGridLines(false);
         rightAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
         //rightAxis.setAxisMinimum(0f); // this replaces setStartAtZero(true)
         //rightAxis.setAxisMaximum(1000f);
@@ -273,7 +470,7 @@ public class GraphFragment extends Fragment
         XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
         xAxis.setTextSize(10f);
-        xAxis.setTextColor(Color.BLACK);
+        xAxis.setTextColor(Color.WHITE);
         xAxis.setDrawAxisLine(true);
         xAxis.setDrawGridLines(true);
         xAxis.setTextColor(Color.rgb(255, 192, 56));
@@ -306,34 +503,52 @@ public class GraphFragment extends Fragment
         }
         mergedFileName += ".csv";
 
+        if (CSVFile.exists(mergedFileName))
+        {
+            CSVFile.delete(mergedFileName);
+        }
+        else if (CSVFile.exists(tempFileName))
+        {
+            CSVFile.delete(tempFileName);
+        }
+
+        int dataSetCnt = 0;
+        String header = "";
         CSVFile tempFile = CSVFile.create(tempFileName);
-        String header = fileNames.length + ";\n";
-        long datasetStartLine = fileNames.length + 1;
         for (String fileName : fileNames)
         {
             CSVFile csvFile = CSVFile.open(fileName, CSVFile.READ_MODE);
-            String line = csvFile.readLine();
-            // serial number is always first line in data set
-            header += line + datasetStartLine + "\n";
-            tempFile.write(line + "\n");
-            while ((line = csvFile.readLine()) != "")
-            {
-                tempFile.write(line + "\n");
-                datasetStartLine += 1;
+            // count the data sets
+            String currentLine = csvFile.readLine();
+            dataSetCnt += Integer.parseInt(currentLine.split(";")[0]);
+            // read serial number(s) is always first line in data set
+            while((currentLine = csvFile.readLine())
+                    .split(";").length == HEADER_LINE_LENGTH
+            ) {
+                    header += currentLine + "\n";
             }
+            // write serial number
+            tempFile.write(currentLine + "\n");
+
+            while((currentLine = csvFile.readLine()).contains(";"))
+            {
+                tempFile.write(currentLine + "\n");
+            }
+            csvFile.close();
         }
         tempFile.close();
 
-        CSVFile mergedFile = CSVFile.create(mergedFileName);
-        tempFile = CSVFile.open(tempFileName, CSVFile.READ_MODE);
-        mergedFile.write(header);
+        header = dataSetCnt + ";\n" + header;
 
+        CSVFile mergedFile = CSVFile.create(mergedFileName);
+        mergedFile.write(header);
+        tempFile = CSVFile.open(tempFileName, CSVFile.READ_MODE);
         String line = "";
         while ((line = tempFile.readLine()) != "")
         {
             mergedFile.write(line + "\n");
         }
-
+        mergedFile.close();
         tempFile.close();
         CSVFile.delete(parentDir + "temp.csv");
 
@@ -341,49 +556,85 @@ public class GraphFragment extends Fragment
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
     {
+        int colorStep=127;   // 255/2=127  3 colors (0,127,254) in each rgb value
+
         //LineData d = new LineData();
         LineDataSet set =
                 new LineDataSet(vT, "DataSet " + (val.ordinal() + 1));
-
+        float[] intervals = new float[] { 10f, 10f };
         set.setLineWidth(2f);
         set.setDrawValues(false);
         set.setDrawCircles(false);
         set.setMode(LineDataSet.Mode.LINEAR);
         set.setDrawFilled(false);
         set.setLabel(val.valToString(val));
-
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
 
+        //differentiating datasets by color (supports max 9 datasets)
+        if (numDataSets > 3)
+        {
+            if (headerIndex < 3) {
+                set.setColor(Color.rgb(headerIndex * colorStep, 0, 127));
+            } else if (headerIndex < 6) {
+                set.setColor(Color.rgb(127, (headerIndex - 3) * colorStep, 0));
+            } else {
+                set.setColor(Color.rgb(0, 127, (headerIndex - 6) * colorStep));
+            }
+        }
+        else     //maximum color differential for 1 to 3 datasets
+        {
+            if (headerIndex == 0)
+            {
+                set.setColor(Color.rgb(200, 0, 0));
+            }
+            else if (headerIndex == 1)
+            {
+                set.setColor(Color.rgb(0, 0, 200));
+            }
+            else
+            {
+                set.setColor(Color.rgb(0, 200, 0));
+            }
+        }
+
+        //differentiating values by different dash patterns
         switch (val)
         {
             case vT1:
-                //set.setColor(Color.BLUE);
-                set.setColor(Color.rgb(68, 102, 163));
+                set.enableDashedLine(10f, 10f, 0);
+                set.setFormLineDashEffect(new DashPathEffect(intervals, 0));
                 break;
 
             case vT2:
-                //set.setColor(Color.MAGENTA);
-                set.setColor(Color.rgb(243, 156, 53));
+                set.enableDashedLine(25f, 25f, 0);
+                intervals[0]=25f;
+                intervals[1]=25f;
+                set.setFormLineDashEffect(new DashPathEffect(intervals, 0));
                 break;
 
             case vT3:
-                //set.setColor(Color.GREEN);
-                set.setColor(Color.rgb(0, 128, 0));
+                set.enableDashedLine(50f, 10f, 0);
+                intervals[0]=50f;
+                set.setFormLineDashEffect(new DashPathEffect(intervals, 0));
                 break;
 
             case vHum:
+                set.setLineWidth(3f);
             case vAD:
+
             case vMicro:
-                set.setColor(Color.BLACK);
-                set.setColor(Color.rgb(128, 0, 0));
+                //set.setColor(Color.BLACK);
+                //set.setColor(Color.rgb(128, 0, 0));
                 set.setAxisDependency(YAxis.AxisDependency.RIGHT);
                 break;
 
             default:
                 throw new UnsupportedOperationException("Not yet implemented");
         }
+
 
         return set;
     }
@@ -444,6 +695,13 @@ public class GraphFragment extends Fragment
     }
 
 
+    /*
+    TODO:
+        1) Rename DmdViewModel to be something more akin to the function of a
+         ViewModel
+        2) Shrink definition
+     */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void LoadDmdData()
     {
         LineDataSet d = null;
@@ -465,12 +723,7 @@ public class GraphFragment extends Fragment
         chart.getAxisLeft().setEnabled(true);
         chart.getAxisRight().setEnabled(true);
 
-        // startup animation
-        chart.animateX(2000, Easing.EaseInCubic);
-
-        // sets view to start of graph and zooms into x axis by 7x
-        chart.zoomAndCenterAnimated(7f, 1f, 0, 0, chart.getAxisLeft().getAxisDependency(), 3000);
-
+        chart.invalidate();
     }
 
 
