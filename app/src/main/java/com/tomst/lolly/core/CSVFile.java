@@ -16,17 +16,15 @@ import java.util.Scanner;
 public class CSVFile
 {
     // public constants
-    /**
-     * Modes allow control over how to open a file. These are useful for
-     * deciphering if a file is intended to be overwritten or appended to.
-     */
     public static final char APPEND_MODE = 'a';
     public static final char READ_MODE = 'r';
     public static final char WRITE_MODE = 'w';
 
     // private constants
-    private static final String TAG = "CSV";
+    private static final int HEADER_LINE_LENGTH = 3;
     private static final int LINE_LENGTH = 0;
+    private static final String TAG = "CSV";
+
 
     // operational members
     private final char mode;
@@ -67,6 +65,32 @@ public class CSVFile
 
     // opening, closing, and creating new files
     /**
+     * Closes a CSVFile object.
+     *
+     * @apiNote This function can be called directly; otherwise, the garbage
+     * collector calls this function on destruction
+     */
+    public void close()
+    {
+        try
+        {
+            if (mode == WRITE_MODE || mode == APPEND_MODE)
+            {
+                this.writer.close();
+            }
+            else
+            {
+                this.reader.close();
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
      * Creates a new file in the filesystem. Shorthand for creating a file and
      * calling CSVFile.open().
      *
@@ -102,7 +126,24 @@ public class CSVFile
 
 
     /**
+     * Removes a file at the given path from the filesystem.
      *
+     * @param path File path from which a file is to be removed
+     */
+    public static void delete(String path)
+    {
+        if (!new File(path).delete())
+        {
+            Log.e(TAG, path + " could not be delete!");
+        }
+    }
+
+
+    /**
+     * Tests if a file has already been created.
+     *
+     * @param path Path to the file which is expected to exist
+     * @return True if file has already been created; false, otherwise
      */
     public static boolean exists(String path)
     {
@@ -121,46 +162,6 @@ public class CSVFile
         File file = new File(path);
 
         return new CSVFile(file, mode);
-    }
-
-
-    /**
-     * Closes a CSVFile object.
-     *
-     * @apiNote This function can be called directly; otherwise, the garbage
-     * collector calls this function on destruction
-     */
-    public void close()
-    {
-        try
-        {
-            if (mode == WRITE_MODE || mode == APPEND_MODE)
-            {
-                this.writer.close();
-            }
-            else
-            {
-                this.reader.close();
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-
-    /**
-     * Removes a file at the given path from the filesystem.
-     *
-     * @param path File path from which a file is to be removed
-     */
-    public static void delete(String path)
-    {
-        if (!new File(path).delete())
-        {
-            Log.e(TAG, path + " could not be delete!");
-        }
     }
 
 
@@ -234,5 +235,77 @@ public class CSVFile
         }
 
         return contents;
+    }
+
+
+    // merging files
+    public static String mergeCSVFiles(String[] fileNames)
+    {
+        final String LAST_OCCURENCE = ".*/";
+        // final String parent_dir = file_names[0].split(LAST_OCCURENCE)[0];
+        // for testing purposes only
+        final String parentDir = "/storage/emulated/0/Documents/";
+        String tempFileName = parentDir + "temp.csv";
+        String mergedFileName = parentDir + fileNames[0]
+                .split(LAST_OCCURENCE)[1]
+                .replace(".csv", "");
+        for (int i = 1; i < fileNames.length; i += 1)
+        {
+            mergedFileName += "-" + fileNames[i]
+                    .split(LAST_OCCURENCE)[1]
+                    .replace(".csv", "");
+        }
+        mergedFileName += ".csv";
+
+        if (CSVFile.exists(mergedFileName))
+        {
+            CSVFile.delete(mergedFileName);
+        }
+        else if (CSVFile.exists(tempFileName))
+        {
+            CSVFile.delete(tempFileName);
+        }
+
+        int dataSetCnt = 0;
+        String header = "";
+        CSVFile tempFile = CSVFile.create(tempFileName);
+        for (String fileName : fileNames)
+        {
+            CSVFile csvFile = CSVFile.open(fileName, CSVFile.READ_MODE);
+            // count the data sets
+            String currentLine = csvFile.readLine();
+            dataSetCnt += Integer.parseInt(currentLine.split(";")[0]);
+            // read serial number(s) is always first line in data set
+            while((currentLine = csvFile.readLine())
+                    .split(";").length == HEADER_LINE_LENGTH
+            ) {
+                header += currentLine + "\n";
+            }
+            // write serial number
+            tempFile.write(currentLine + "\n");
+
+            while((currentLine = csvFile.readLine()).contains(";"))
+            {
+                tempFile.write(currentLine + "\n");
+            }
+            csvFile.close();
+        }
+        tempFile.close();
+
+        header = dataSetCnt + ";\n" + header;
+
+        CSVFile mergedFile = CSVFile.create(mergedFileName);
+        mergedFile.write(header);
+        tempFile = CSVFile.open(tempFileName, CSVFile.READ_MODE);
+        String line = "";
+        while ((line = tempFile.readLine()) != "")
+        {
+            mergedFile.write(line + "\n");
+        }
+        mergedFile.close();
+        tempFile.close();
+        CSVFile.delete(parentDir + "temp.csv");
+
+        return mergedFileName;
     }
 }

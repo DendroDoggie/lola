@@ -66,9 +66,6 @@ public class GraphFragment extends Fragment
     private static final byte PICTURE_INDEX = 4;
 
 
-    // constants for merging CSV files
-    private static final int HEADER_LINE_LENGTH = 3;
-
     // constants for loading measurements
     private static final byte TEMP1_INDEX = 3;
     private static final byte TEMP2_INDEX = 4;
@@ -367,7 +364,8 @@ public class GraphFragment extends Fragment
 
                         if (fileNames.length > 1)
                         {
-                            String mergedFileName = mergeCSVFiles(fileNames);
+                            String mergedFileName =
+                                    CSVFile.mergeCSVFiles(fileNames);
                             Log.d(
                                     "GRAPH",
                                     "Merged file name = "
@@ -482,77 +480,6 @@ public class GraphFragment extends Fragment
         //chart.invalidate();
         //setRandomData(400,100);
         return root;
-    }
-
-
-    private String mergeCSVFiles(String[] fileNames)
-    {
-        final String LAST_OCCURENCE = ".*/";
-        // final String parent_dir = file_names[0].split(LAST_OCCURENCE)[0];
-        // for testing purposes only
-        final String parentDir = "/storage/emulated/0/Documents/";
-        String tempFileName = parentDir + "temp.csv";
-        String mergedFileName = parentDir + fileNames[0]
-                .split(LAST_OCCURENCE)[1]
-                .replace(".csv", "");
-        for (int i = 1; i < fileNames.length; i += 1)
-        {
-            mergedFileName += "-" + fileNames[i]
-                    .split(LAST_OCCURENCE)[1]
-                    .replace(".csv", "");
-        }
-        mergedFileName += ".csv";
-
-        if (CSVFile.exists(mergedFileName))
-        {
-            CSVFile.delete(mergedFileName);
-        }
-        else if (CSVFile.exists(tempFileName))
-        {
-            CSVFile.delete(tempFileName);
-        }
-
-        int dataSetCnt = 0;
-        String header = "";
-        CSVFile tempFile = CSVFile.create(tempFileName);
-        for (String fileName : fileNames)
-        {
-            CSVFile csvFile = CSVFile.open(fileName, CSVFile.READ_MODE);
-            // count the data sets
-            String currentLine = csvFile.readLine();
-            dataSetCnt += Integer.parseInt(currentLine.split(";")[0]);
-            // read serial number(s) is always first line in data set
-            while((currentLine = csvFile.readLine())
-                    .split(";").length == HEADER_LINE_LENGTH
-            ) {
-                    header += currentLine + "\n";
-            }
-            // write serial number
-            tempFile.write(currentLine + "\n");
-
-            while((currentLine = csvFile.readLine()).contains(";"))
-            {
-                tempFile.write(currentLine + "\n");
-            }
-            csvFile.close();
-        }
-        tempFile.close();
-
-        header = dataSetCnt + ";\n" + header;
-
-        CSVFile mergedFile = CSVFile.create(mergedFileName);
-        mergedFile.write(header);
-        tempFile = CSVFile.open(tempFileName, CSVFile.READ_MODE);
-        String line = "";
-        while ((line = tempFile.readLine()) != "")
-        {
-            mergedFile.write(line + "\n");
-        }
-        mergedFile.close();
-        tempFile.close();
-        CSVFile.delete(parentDir + "temp.csv");
-
-        return mergedFileName;
     }
 
 
