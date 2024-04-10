@@ -152,13 +152,16 @@ public class pars {
 
         // negative UTC offsets are greater than 0x80
         if (i > 0x80) {
-            i = (i - 80) * -1;
+            i = (i - 0x80) * -1;
+
+            // convert back to decimal
+            i = (i % 16) + (i / 16) * 10;
         }
 
         return(i);
     }
 
-    private static int copyHex(String reply, int start, int count)
+    public static int copyHex(String reply, int start, int count)
     {
         String s = reply.substring(start-1,start+count-1);
         int i = Integer.parseInt(s,16);
@@ -366,7 +369,6 @@ public class pars {
     /*** Konstruktor, nastavim defaultni hodnoty ***/
     @RequiresApi(api = Build.VERSION_CODES.O)
     public pars(){
-        Log.d("|||DEBUG|||", "pars + " + fMereni.month);
         //RandomAccessFile file = new RandomAccessFile("/Users/pankaj/Downloads/myfile.txt", "r");
         InitConstants();
     }
