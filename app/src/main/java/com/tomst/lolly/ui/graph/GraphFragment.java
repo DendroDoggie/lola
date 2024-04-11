@@ -313,7 +313,7 @@ public class GraphFragment extends Fragment
         }
     }
 
-    private TMereni processLine(String line)
+    public TMereni processLine(String line)
     {
         long currTime;
         String[] lineOfFile = line.split(";");
