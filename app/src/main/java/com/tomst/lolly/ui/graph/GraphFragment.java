@@ -208,7 +208,7 @@ public class GraphFragment extends Fragment
         headerIndex = ogHeaderIndex;
     }
 
-    private void loadCSVFile(String fileName)
+    public void loadCSVFile(String fileName)
     {
         Toast.makeText(getContext(), "loading", Toast.LENGTH_SHORT).show();
         long valueIndex = 0;
@@ -839,6 +839,18 @@ public class GraphFragment extends Fragment
         chart.getAxisRight().setEnabled(true);
 
         chart.invalidate();
+    }
+
+
+    public ArrayList<ILineDataSet> dataSets()
+    {
+        return dataSets;  // TODO: return a copy
+    }
+
+
+    public ArrayList<TDendroInfo> getDendroInfos()
+    {
+        return dendroInfos;  // TODO: return a copy
     }
 
 
