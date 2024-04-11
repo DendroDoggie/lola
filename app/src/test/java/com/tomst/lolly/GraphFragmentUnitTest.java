@@ -62,6 +62,11 @@ public class GraphFragmentUnitTest
     }
 
 
+    public void displayData_isCorrect()
+    {
+    }
+
+
     public void loadCSVFile_isCorrect()
     {
         // test loading a single data set file
@@ -172,6 +177,12 @@ public class GraphFragmentUnitTest
         assertEquals(actual_dendroInfos.size(), expected_dendroInfo.size());
         assertEquals(actual_dendroInfos.get(0), expected_dendroInfo.get(0));
         assertEquals(actual_dendroInfos.get(1), expected_dendroInfo.get(1));
+    }
+
+
+    public void loadDmdData_isCorrect()
+    {
+        // TODO: dunno if this *can* actually be tested
     }
 
 
