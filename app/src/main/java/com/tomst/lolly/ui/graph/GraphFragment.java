@@ -562,7 +562,7 @@ public class GraphFragment extends Fragment
         return serialNumber;
     }
 
-    private String mergeCSVFiles(String[] fileNames)
+    public String mergeCSVFiles(String[] fileNames)
     {
         Log.d("MERGECALL", "Merge is called");
         String[] strArr;
