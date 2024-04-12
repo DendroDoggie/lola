@@ -265,11 +265,10 @@ public class CSVFile
         }
 
         CSVFile src = CSVFile.open(path, READ_MODE);
-        CSVFile tmp = CSVFile.create(tmpFileName);
 
         String currentLine;
         String[] split;
-        ArrayList<String> serials = new ArrayList<String>();
+        ArrayList<String[]> serials = new ArrayList<String[]>();
         ArrayList<ArrayList<String>> dataSets =
                 new ArrayList<ArrayList<String>>();
 
@@ -282,26 +281,60 @@ public class CSVFile
         split = currentLine.split(DELIM);
         while (split.length > 1)
         {
-            serials.add(split[0]);
+            serials.add(split);
             dataSets.add(new ArrayList<String>());
         }
 
-        int dataSetsIdx = 0;
-        while ((currentLine = src.readLine()) != "")
+        for (int i = 0; (currentLine = src.readLine()) != ""; i += 1)
         {
             if (currentLine.split(DELIM).length == 1)
             {
-                dataSetsIdx += 1;
+                i = 0;
             }
 
-            dataSets.get(dataSetsIdx).add(currentLine);
+            dataSets.get(i).add(currentLine);
+        }
+        src.close();
+
+        CSVFile dest = CSVFile.open(path, CSVFile.WRITE_MODE);
+
+        // write header
+        dest.write(serials.size() + ";\n");
+        String line;
+        for (int i = 0; i < serials.size(); i += 1)
+        {
+            line = "";
+
+            for (int j = 0; j < serials.get(i).length; j += 1)
+            {
+                line += serials.get(i)[j] + DELIM;
+            }
+
+            dest.write(line + "\n");
         }
 
-        // write data - maybe there is a rename operation - mv?
+        // write column names
+        line = "";
+        for (int i = 0; i < serials.size(); i += 1)
+        {
+            line += serials.get(i)[0] + DELIM;
+        }
+        dest.write(line + "\n");
 
-        src.close();
-        tmp.close();
-        CSVFile.delete(tmpFileName);
+        // write data
+        for (int i = 0; i < dataSets.size(); i += 1)
+        {
+            line = "";
+
+            for (int j = 0; j < dataSets.get(i).size(); j += 1)
+            {
+                line += dataSets.get(i).get(j) + DELIM;
+            }
+
+            line += "\n";
+            dest.write(line);
+        }
+        dest.close();
 
         return 0;
     }
