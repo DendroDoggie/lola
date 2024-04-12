@@ -6,6 +6,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 
@@ -27,6 +28,8 @@ public class CSVFile
     // private constants
     private static final String TAG = "CSV";
     private static final int LINE_LENGTH = 0;
+    private static final String DELIM = ";";
+    // positional consts for indexing
 
     // operational members
     private final char mode;
@@ -234,5 +237,142 @@ public class CSVFile
         }
 
         return contents;
+    }
+
+
+    /**
+     * Reformats the CSV file into a parallel format (i.e. data is listed in
+     * columns: meter1;meter2;meter3;...).
+     *
+     * @param path Path of file to convert
+     * @return Code which communicates if the operation was successful (0) or
+     * if the operation failed
+     * @apiNote Failure codes and their descriptions:
+     * 1 = File specified does not exist
+     * 2 = File is not a merged file
+     */
+    public static int toParallel(String path)
+    {
+        final String tmpFileName = "temp.csv";
+
+        if (!CSVFile.exists(path))
+        {
+            return 1;
+        }
+        else if (CSVFile.exists(tmpFileName))
+        {
+            CSVFile.delete(tmpFileName);
+        }
+
+        CSVFile src = CSVFile.open(path, READ_MODE);
+        CSVFile tmp = CSVFile.create(tmpFileName);
+
+        String currentLine;
+        String[] split;
+        ArrayList<String> serials = new ArrayList<String>();
+        ArrayList<ArrayList<String>> dataSets =
+                new ArrayList<ArrayList<String>>();
+
+        currentLine = src.readLine();
+        if (currentLine.split(DELIM)[0] == "1")
+        {
+            return 2;
+        }
+
+        split = currentLine.split(DELIM);
+        while (split.length > 1)
+        {
+            serials.add(split[0]);
+            dataSets.add(new ArrayList<String>());
+        }
+
+        int dataSetsIdx = 0;
+        while ((currentLine = src.readLine()) != "")
+        {
+            if (currentLine.split(DELIM).length == 1)
+            {
+                dataSetsIdx += 1;
+            }
+
+            dataSets.get(dataSetsIdx).add(currentLine);
+        }
+
+        // write data - maybe there is a rename operation - mv?
+
+        src.close();
+        tmp.close();
+        CSVFile.delete(tmpFileName);
+
+        return 0;
+    }
+
+
+    /**
+     * Reformats the CSV file into a serial structure (i.e. data from each
+     * dendrometer is listed one after the other). This is the default
+     * structure of merged files.
+     *
+     * @path Path of file to convert
+     * @return Code which communicates if the operation was successful (0) or
+     * if the operation failed
+     * @apiNote Failure codes and their descriptions:
+     * 1 = File specified does not exist
+     * 2 = File is not a merged file
+     */
+    public static int toSerial(String path)
+    {
+        final String tmpFileName = "temp.csv";
+
+        if (!CSVFile.exists(path))
+        {
+            return 1;
+        }
+        else if (CSVFile.exists(tmpFileName))
+        {
+            CSVFile.delete(tmpFileName);
+        }
+
+        CSVFile src = CSVFile.open(path, READ_MODE);
+        CSVFile tmp = CSVFile.create(tmpFileName);
+
+        String currentLine = "";
+        String[] split;
+        ArrayList<String> serials = new ArrayList<String>();
+        ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
+
+        // read data set count?
+        currentLine = src.readLine();
+        split = currentLine.split(DELIM);
+
+        if (split.length < 2)
+        {
+            return 2;
+        }
+
+        // TODO: does not account for where the lat and long coords are placed
+        for (int i = 0; i < split.length; i += 1)
+        {
+            serials.add(split[i]);
+            data.add(new ArrayList<String>());
+        }
+
+        while ((currentLine = src.readLine()) != "")
+        {
+            split = currentLine.split(DELIM);
+
+            for (int i = 0; i < split.length; i += 1)
+            {
+                // 'i' will probably need to be an offset?
+                data.get(i).add(split[i]);
+            }
+        }
+
+        // write data - maybe there is a rename operation - mv?
+
+        src.close();
+        tmp.close();
+        CSVFile.delete(tmpFileName);
+
+        return 0;
     }
 }
