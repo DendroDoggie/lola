@@ -18,7 +18,8 @@ public class ParsUnitTest {
     @Mock
     Context MockContext;
 
-    private static final int DEFAULT_TEMP = -200;
+    private static final double DEFAULT_TEMP = -200.0;
+    private static final double FLOAT_TEST_TOLERANCE = 0.01;
 
     public pars parser;
 
@@ -99,15 +100,15 @@ public class ParsUnitTest {
     }
 
     @Test
-    public void disassembleData_isCorrect() {
+    public void disassembleData_ADC_isCorrect() {
         TMereni expected = new TMereni();
         expected.hh = 13;
         expected.mm = 30;
         expected.ss = 0;
         expected.adc = 255;
-        expected.hum = 0;
+        expected.hum = 8890;
         expected.Err = 0;
-        expected.t1 = 0;
+        expected.t1 = 25.4375;
         expected.t2 = DEFAULT_TEMP;
         expected.t3 = DEFAULT_TEMP;
 
@@ -120,11 +121,41 @@ public class ParsUnitTest {
         assertEquals(expected.hh, actual.hh);
         assertEquals(expected.mm, actual.mm);
         assertEquals(expected.ss, actual.ss);
-        assertEquals(expected.gtm, actual.gtm);
+        assertEquals(expected.adc, actual.adc);
+        assertEquals(expected.hum, actual.hum);
+        assertEquals(expected.Err, actual.Err);
+        assertEquals(expected.t1, actual.t1, FLOAT_TEST_TOLERANCE);
+        assertEquals(expected.t2, actual.t2, FLOAT_TEST_TOLERANCE);
+        assertEquals(expected.t3, actual.t3, FLOAT_TEST_TOLERANCE);
+    }
+
+    @Test
+    public void disassembleData_nonADC_isCorrect() {
+        TMereni expected = new TMereni();
+        expected.hh = 13;
+        expected.mm = 30;
+        expected.ss = 0;
+        expected.mvs = 2;
+        expected.hum = 15;
+        expected.Err = 0;
+        expected.t1 = -0.8125;
+        expected.t2 = -0.8125;
+        expected.t3 = 25.4375;
+
+        String input = "D133000FFF3FF31972";
+
+        TMereni actual = new TMereni();
+
+        parser.disassembleData(input, actual);
+
         assertEquals(expected.hh, actual.hh);
-        assertEquals(expected.hh, actual.hh);
-        assertEquals(expected.hh, actual.hh);
-        assertEquals(expected.hh, actual.hh);
-        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.mm, actual.mm);
+        assertEquals(expected.ss, actual.ss);
+        assertEquals(expected.mvs, actual.mvs);
+        assertEquals(expected.hum, actual.hum);
+        assertEquals(expected.Err, actual.Err);
+        assertEquals(expected.t1, actual.t1, FLOAT_TEST_TOLERANCE);
+        assertEquals(expected.t2, actual.t2, FLOAT_TEST_TOLERANCE);
+        assertEquals(expected.t3, actual.t3, FLOAT_TEST_TOLERANCE);
     }
 }
