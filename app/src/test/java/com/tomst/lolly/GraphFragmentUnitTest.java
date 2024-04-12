@@ -4,10 +4,14 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.tomst.lolly.core.CSVFile;
 import com.tomst.lolly.core.TDendroInfo;
 import com.tomst.lolly.core.TMereni;
+import com.tomst.lolly.core.TPhysValue;
 import com.tomst.lolly.ui.graph.GraphFragment;
 
 import org.junit.Before;
@@ -64,6 +68,52 @@ public class GraphFragmentUnitTest
 
     public void displayData_isCorrect()
     {
+        graphfrag.loadCSVFile(testFilename);
+        graphfrag.DisplayData();
+        ArrayList<ILineDataSet> actual_dataSets = graphfrag.getDataSets();
+        ArrayList<TDendroInfo> expected_dendroInfo = new ArrayList<TDendroInfo>();
+        expected_dendroInfo.add(new TDendroInfo(
+                "678432", Long.parseLong("1"), Long.parseLong("1")
+        ));
+        TMereni expected_mer = new TMereni();
+        expected_mer.Serial = null;
+        expected_mer.dtm = LocalDateTime.parse("2024.07.12 07:01", formatter);
+        expected_mer.day = expected_mer.dtm.getDayOfMonth();
+        expected_mer.t1 = Float.parseFloat("73.123");
+        expected_mer.t2 = Float.parseFloat("-200");
+        expected_mer.t3 = Float.parseFloat("-200");
+        expected_mer.hum = Integer.parseInt("63");
+        expected_mer.mvs = Integer.parseInt("200");
+        long originDate = expected_mer.dtm.toEpochSecond(ZoneOffset.MAX);
+        float dataNum =
+                (expected_mer.dtm.toEpochSecond(ZoneOffset.MAX) - originDate) / 60;
+
+        expected_dendroInfo.get(0).mers.add(expected_mer);
+        expected_dendroInfo.get(0).vT1.add(new Entry(dataNum,
+                (float) expected_mer.t1
+        ));
+        expected_dendroInfo.get(0).vT2.add(new Entry(dataNum,
+                (float) expected_mer.t2
+        ));
+        expected_dendroInfo.get(0).vT3.add(new Entry(dataNum,
+                (float) expected_mer.t3
+        ));
+        expected_dendroInfo.get(0).vHA.add(new Entry(dataNum,
+                (float) expected_mer.hum
+        ));
+        ArrayList<ILineDataSet> expected_dataSets =
+                new ArrayList<ILineDataSet>();
+        expected_dataSets.add(graphfrag.SetLine(
+                expected_dendroInfo.get(0).vT1, TPhysValue.vT1
+        ));
+        // add vT2
+        // add vT3
+        expected_dataSets.add(graphfrag.SetLine(
+                expected_dendroInfo.get(0).vHA, TPhysValue.vHum
+        ));
+
+        assertEquals(actual_dataSets.size(), expected_dataSets.size());
+        assertEquals(actual_dataSets.get(0), expected_dataSets.get(0));
     }
 
 

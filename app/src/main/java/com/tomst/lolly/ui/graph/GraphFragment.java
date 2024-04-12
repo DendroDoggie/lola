@@ -153,7 +153,7 @@ public class GraphFragment extends Fragment
         super.onStop();
     }
 
-    private void DisplayData()
+    public void DisplayData()
     {
         boolean firstOfItsKind = true;
         int ogHeaderIndex = headerIndex;
@@ -668,7 +668,7 @@ public class GraphFragment extends Fragment
         return mergedFileName;
     }
 
-    private LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
+    public LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
     {
         int colorStep=127;   // 255/2=127  3 colors (0,127,254) in each rgb value
 
@@ -842,7 +842,7 @@ public class GraphFragment extends Fragment
     }
 
 
-    public ArrayList<ILineDataSet> dataSets()
+    public ArrayList<ILineDataSet> getDataSets()
     {
         return dataSets;  // TODO: return a copy
     }
