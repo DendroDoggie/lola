@@ -18,6 +18,8 @@ public class ParsUnitTest {
     @Mock
     Context MockContext;
 
+    private static final int DEFAULT_TEMP = -200;
+
     public pars parser;
 
     @Before
@@ -98,6 +100,31 @@ public class ParsUnitTest {
 
     @Test
     public void disassembleData_isCorrect() {
+        TMereni expected = new TMereni();
+        expected.hh = 13;
+        expected.mm = 30;
+        expected.ss = 0;
+        expected.adc = 255;
+        expected.hum = 0;
+        expected.Err = 0;
+        expected.t1 = 0;
+        expected.t2 = DEFAULT_TEMP;
+        expected.t3 = DEFAULT_TEMP;
 
+        String input = "D133000FADCFF31972";
+
+        TMereni actual = new TMereni();
+
+        parser.disassembleData(input, actual);
+
+        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.mm, actual.mm);
+        assertEquals(expected.ss, actual.ss);
+        assertEquals(expected.gtm, actual.gtm);
+        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.hh, actual.hh);
+        assertEquals(expected.hh, actual.hh);
     }
 }
