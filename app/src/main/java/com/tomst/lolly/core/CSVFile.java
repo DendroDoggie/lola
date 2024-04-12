@@ -29,7 +29,15 @@ public class CSVFile
     private static final String TAG = "CSV";
     private static final int LINE_LENGTH = 0;
     private static final String DELIM = ";";
+
     // positional consts for indexing
+    private static final byte POINT_LEN = 8;
+    private static final byte DATETIME_INDEX = 1;
+    private static final byte TEMP1_INDEX = 3;
+    private static final byte TEMP2_INDEX = 4;
+    private static final byte TEMP3_INDEX = 5;
+    private static final byte HUMIDITY_INDEX = 6;
+    private static final byte MVS_INDEX = 7;
 
     // operational members
     private final char mode;
@@ -247,29 +255,24 @@ public class CSVFile
      * @param path Path of file to convert
      * @return Code which communicates if the operation was successful (0) or
      * if the operation failed
+     * @apiNote This function write in-place! Please copy and then convert if
+     * you wish to preserve the source file.
      * @apiNote Failure codes and their descriptions:
      * 1 = File specified does not exist
      * 2 = File is not a merged file
      */
     public static int toParallel(String path)
     {
-        final String tmpFileName = "temp.csv";
-
         if (!CSVFile.exists(path))
         {
             return 1;
         }
-        else if (CSVFile.exists(tmpFileName))
-        {
-            CSVFile.delete(tmpFileName);
-        }
 
         CSVFile src = CSVFile.open(path, READ_MODE);
-
         String currentLine;
         String[] split;
         ArrayList<String[]> serials = new ArrayList<String[]>();
-        ArrayList<ArrayList<String>> dataSets =
+        ArrayList<ArrayList<String>> data =
                 new ArrayList<ArrayList<String>>();
 
         currentLine = src.readLine();
@@ -282,7 +285,8 @@ public class CSVFile
         while (split.length > 1)
         {
             serials.add(split);
-            dataSets.add(new ArrayList<String>());
+            data.add(new ArrayList<String>());
+            split = src.readLine().split(DELIM);
         }
 
         for (int i = 0; (currentLine = src.readLine()) != ""; i += 1)
@@ -292,12 +296,11 @@ public class CSVFile
                 i = 0;
             }
 
-            dataSets.get(i).add(currentLine);
+            data.get(i).add(currentLine);
         }
         src.close();
 
         CSVFile dest = CSVFile.open(path, CSVFile.WRITE_MODE);
-
         // write header
         dest.write(serials.size() + ";\n");
         String line;
@@ -322,13 +325,13 @@ public class CSVFile
         dest.write(line + "\n");
 
         // write data
-        for (int i = 0; i < dataSets.size(); i += 1)
+        for (int i = 0; i < data.size(); i += 1)
         {
             line = "";
 
-            for (int j = 0; j < dataSets.get(i).size(); j += 1)
+            for (int j = 0; j < data.get(i).size(); j += 1)
             {
-                line += dataSets.get(i).get(j) + DELIM;
+                line += data.get(i).get(j) + DELIM;
             }
 
             line += "\n";
@@ -348,63 +351,85 @@ public class CSVFile
      * @path Path of file to convert
      * @return Code which communicates if the operation was successful (0) or
      * if the operation failed
+     * @apiNote This function write in-place! Please copy and then convert if
+     * you wish to preserve the source file.
      * @apiNote Failure codes and their descriptions:
      * 1 = File specified does not exist
      * 2 = File is not a merged file
      */
     public static int toSerial(String path)
     {
-        final String tmpFileName = "temp.csv";
-
         if (!CSVFile.exists(path))
         {
             return 1;
         }
-        else if (CSVFile.exists(tmpFileName))
-        {
-            CSVFile.delete(tmpFileName);
-        }
 
         CSVFile src = CSVFile.open(path, READ_MODE);
-        CSVFile tmp = CSVFile.create(tmpFileName);
-
         String currentLine = "";
         String[] split;
-        ArrayList<String> serials = new ArrayList<String>();
+        ArrayList<String[]> serials = new ArrayList<String[]>();
         ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
 
-        // read data set count?
+        int numDataSets = 0;
         currentLine = src.readLine();
-        split = currentLine.split(DELIM);
-
-        if (split.length < 2)
+        if ((numDataSets = Integer.parseInt(currentLine.split(DELIM)[0])) == 1)
         {
             return 2;
         }
 
-        // TODO: does not account for where the lat and long coords are placed
-        for (int i = 0; i < split.length; i += 1)
+        for (int i = 0; i < numDataSets; i += 1)
         {
-            serials.add(split[i]);
+            split = src.readLine().split(DELIM);
+            serials.add(split);
             data.add(new ArrayList<String>());
         }
+        src.readLine();  // consume column names - already have in `serials`
 
-        while ((currentLine = src.readLine()) != "")
+        while ((split = src.readLine().split(DELIM)).length > 0)
         {
-            split = currentLine.split(DELIM);
-
-            for (int i = 0; i < split.length; i += 1)
+            for (int i = 0; i < numDataSets; i += 1)
             {
-                // 'i' will probably need to be an offset?
-                data.get(i).add(split[i]);
+                data.get(i).add(
+                        split[i * POINT_LEN + 0] + DELIM
+                        + split[i * POINT_LEN + DATETIME_INDEX] + DELIM
+                        + split[i * POINT_LEN + 2] + DELIM
+                        + split[i * POINT_LEN + TEMP1_INDEX] + DELIM
+                        + split[i * POINT_LEN + TEMP2_INDEX] + DELIM
+                        + split[i * POINT_LEN + TEMP3_INDEX] + DELIM
+                        + split[i * POINT_LEN + HUMIDITY_INDEX] + DELIM
+                        + split[i * POINT_LEN + MVS_INDEX] + DELIM
+                        + split[i * POINT_LEN + 8] + DELIM
+                );
+                // magic numbers are place holders until I figure out what data
+                // is at those indicies
             }
         }
-
-        // write data - maybe there is a rename operation - mv?
-
         src.close();
-        tmp.close();
-        CSVFile.delete(tmpFileName);
+
+        CSVFile dest = CSVFile.open(path, CSVFile.READ_MODE);
+        String line;
+        for (int i = 0; i < serials.size(); i += 1)
+        {
+            line = "";
+
+            for (int j = 0; j < serials.get(i).length; j += 1)
+            {
+                line += serials.get(i)[j] + DELIM;
+            }
+
+            dest.write(line + "\n");
+        }
+
+        for (int i = 0; i < numDataSets; i += 1)
+        {
+            dest.write(serials.get(i)[0]);
+
+            for (int j = 0; j < data.get(i).size(); i += 1)
+            {
+                dest.write(data.get(i).get(j) + "\n");
+            }
+        }
+        dest.close();
 
         return 0;
     }
