@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
@@ -26,6 +27,7 @@ import com.ftdi.j2xx.FT_Device;
 
 import java.io.File;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -36,7 +38,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 
-public class TMSReader extends Thread {
+public class TMSReader extends Thread
+{
+    public final int SPI_DOWNLOAD_NONE = 0;
+    public final int SPI_DOWNLOAD_ALL = 1;
+    public final int SPI_DOWNLOAD_BOOKMARK = 2;
+    public final int SPI_DOWNLOAD_DATE = 3;
+    private final int BOOKMARK_DAY_CONVERSION = 848;
+
     // vystupy ven z tridy
     public int capUsed = 0;  // kapacita v %
     public long delta = 0;  // rozdil mezi casem v telefonu a v TMS
@@ -58,7 +67,6 @@ public class TMSReader extends Thread {
     public String SerialNumber;
     public String AdapterNumber;
     public RFirmware rfir;
-    public boolean Writebookmark;
 
 
     private static volatile TDevState devState;
@@ -175,12 +183,15 @@ public class TMSReader extends Thread {
 
     private void SendMex(TDevState stat, TMereni mer){
         Message message = handler.obtainMessage();
+
         TInfo info = new TInfo();
         info.stat  = stat;
         info.msg   = "measure";
         info.t1 = mer.t1;
         info.t2 = mer.t2;
         info.t3 = mer.t3;
+        info.humAd = mer.hum;
+
         message.obj = info;
         handler.sendMessage(message);
 
@@ -188,7 +199,8 @@ public class TMSReader extends Thread {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    public void run() {
+    public void run()
+    {
         Looper.prepare();
         mLoop();
     }
@@ -211,7 +223,8 @@ public class TMSReader extends Thread {
         return line.substring(line.indexOf(s1 ) + 1, line.indexOf(s2));
     }
 
-    public boolean ParseHeader(String line){
+    public boolean ParseHeader(String line)
+    {
         // @ =&93^33%01.80 TMS-A   // dendrometr
         // @ =&93^A0%01.80 TMSx1#
         boolean result = false;
@@ -275,7 +288,8 @@ public class TMSReader extends Thread {
         return rfir.Result;
     }
 
-    public  void clearMer(){
+    public  void clearMer()
+    {
         mer.t1  = 0;
         mer.t2  = 0;
         mer.t3  = 0;
@@ -291,12 +305,15 @@ public class TMSReader extends Thread {
     }
 
 
-    public  byte con(String str, byte pos){
+    public  byte con(String str, byte pos)
+    {
         String s = str.substring(pos,pos+1);
         return (byte)Integer.parseInt(s,16);
     }
 
-    public boolean convertMereni(String line) {
+    public boolean convertMereni(String line)
+    {
+        Log.d("|||DEBUG|||", "line: " + line);
         int tmpNan = -200;
 
         String[] str = line.split(";");
@@ -339,8 +356,10 @@ public class TMSReader extends Thread {
         String s = str[4].replaceAll("(\\r|\\n)", "");
         int mvs = Integer.parseInt(s,16);
 
+        Log.d("|||DEBUG|||", "hum: " + mer.hum);
+
         if ((mer.dev == TDeviceType.dAD) || (mer.dev == TDeviceType.dAdMicro)) {
-            mer.hum = 0;
+//            mer.hum = 0;
             mer.t1  = convertTemp(tt3);
             mer.t2  = tmpNan;
             mer.t3  = tmpNan;
@@ -360,7 +379,8 @@ public class TMSReader extends Thread {
         return true;
     }
 
-    public  double con (int b1){
+    public  double con (int b1)
+    {
         double result = 0;
         int bx = b1 & 8;
 
@@ -716,15 +736,17 @@ public class TMSReader extends Thread {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void mLoop(){
-        String s= "";
+    private void mLoop()
+    {
+        String s = "";
         TInfo info;
         info = new TInfo();
 
         devState = TDevState.tStart;
         lollyTime = Instant.MIN;
 
-        if (fHer==null) {
+        if (fHer==null)
+        {
             //throw new UnsupportedOperationException("Communication is not ready");
             SendMeasure(TDevState.tNoHardware, "fHer==null !");
             return;
@@ -732,10 +754,10 @@ public class TMSReader extends Thread {
 
         while (( devState != TDevState.tFinal ) && (devState != TDevState.tError) && (mRunning)){
             // devState
-            Log.e(TAG,devState.toString());
+            Log.e(TAG, devState.toString());
 
-            switch (devState) {
-
+            switch (devState)
+            {
                 case tStart:
                     SendMeasure(TDevState.tStart, "test");
                     if (startFTDI())
@@ -764,10 +786,11 @@ public class TMSReader extends Thread {
                         break;
                     }
                     // seriove cislo
-                    s = aft(s,"=");
+                    s = aft(s, "=");
 
                     // duplicita
-                    if (s.compareToIgnoreCase(SerialNumber) > 0) {
+                    if (s.compareToIgnoreCase(SerialNumber) > 0)
+                    {
                        SendMeasure(TDevState.tSerialDuplicity,"s");
                        break;
                     }
@@ -831,7 +854,16 @@ public class TMSReader extends Thread {
                         SendMex(TDevState.tInfo,mer);
                     }
                     //devState = TDevState.tGetTime;
-                    devState = TDevState.tCapacity;
+
+                    // get option for showing graph
+                    boolean showMicro = context.getSharedPreferences(
+                                    "save_options", Context.MODE_PRIVATE
+                            ).getBoolean("showmicro", false);
+
+                    // if setting for setupAD is no, move on to capacity
+                    if (!showMicro) {
+                        devState = TDevState.tCapacity;
+                    }
                     break;
 
                 case tCapacity:
@@ -849,7 +881,7 @@ public class TMSReader extends Thread {
                     float d = Float.valueOf(lastAddress) / Float.valueOf(0x3FFFFF) * 100;
                     capUsed  = Math.round(d);
                     mer.msg = String.valueOf(capUsed);
-                    SendMeasure(TDevState.tCapacity,mer.msg);
+                    SendMeasure(TDevState.tCapacity, mer.msg);
                     devState = TDevState.tGetTime;
 
                     break;
@@ -858,7 +890,7 @@ public class TMSReader extends Thread {
                     s = fHer.doCommand("C");
                     lollyTime = parseDateTime(s);   // dostanu utc cas + zonu, bez letniho casu
                     mer.msg = lollyTimeString;      // lollyTimeString nastavuju v parseDateTime
-                    SendMeasure(TDevState.tGetTime,mer.msg);
+                    SendMeasure(TDevState.tGetTime, mer.msg);
 
                     devState = TDevState.tCompareTime;
                     break;
@@ -925,11 +957,14 @@ public class TMSReader extends Thread {
                 case tFinishedData:
                     SendMeasure(TDevState.tFinishedData,"FINISHED!");
                     devState = TDevState.tWaitInLimbo;
+
+                    Toast.makeText(this.context, "Finished!", Toast.LENGTH_SHORT).show();
                     break;
 
                 case tWaitInLimbo:
                     try {
                         Thread.sleep(1000); // 1 second
+                        devState = TDevState.tStart;
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -941,7 +976,7 @@ public class TMSReader extends Thread {
             }
         }
 
-        Log.e("TOMST",devState.toString());
+        Log.e("TOMST", devState.toString());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -1012,13 +1047,39 @@ public class TMSReader extends Thread {
         return 0;
     }
 
+    private String getHexValueFromBookmark(int pValue, int bookmarkDays) {
+        // subtract p value (current pointer) from days converted to int/hex
+        int finalValue = pValue - (bookmarkDays * BOOKMARK_DAY_CONVERSION);
+        finalValue = Math.max(0, finalValue); // clamp to 0
+        String hexString = Integer.toHexString(finalValue).toUpperCase();
+
+        // pad the beginning of the string with 0's if less than 6 characters
+        StringBuilder finalHexStringBuilder = new StringBuilder();
+        for (int i = 0; i < 6 - hexString.length(); i++) {
+            finalHexStringBuilder.append("0");
+        }
+        finalHexStringBuilder.append(hexString);
+        String finalHexString = finalHexStringBuilder.toString();
+
+        Log.d("Sendmessage", "Bookmark hex value: " + finalHexString);
+
+        return finalHexString;
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private boolean ReadData(){
+    private boolean ReadData()
+    {
+        String respond = "";
         pars parser = new pars();
         pars.SetHandler(datahandler);
         pars.SetDeviceType(rfir.DeviceType);
 
-
+        SharedPreferences prefs = context.getSharedPreferences(
+                "save_options", Context.MODE_PRIVATE
+        );
+        int readFromSpinnerIndex = prefs.getInt("readFrom", SPI_DOWNLOAD_NONE);
+        int bookmarkDays = prefs.getInt("bookmarkVal", 0);
+        String readFromDate = prefs.getString("fromDate", "");
 
         if (ftDev == null)
         {
@@ -1032,17 +1093,47 @@ public class TMSReader extends Thread {
             return false;
         }
 
-        // pointer na bookmark
-
-
-        // pointer na nulu
-        String respond = fHer.doCommand("S=$000000");
-        Log.d("Sendmessage", respond);
-
         // napocitej pocet cyklu z posledni adresy
-        respond = fHer.doCommand("P");
-        int lastAddress = getaddr(respond);
-        DoProgress(-lastAddress); // celkovy pocet bytu
+        String pRespond = fHer.doCommand("P");
+        int lastAddress = getaddr(pRespond);
+        DoProgress(-lastAddress);  // celkovy pocet bytu
+
+        switch (readFromSpinnerIndex) {
+            case SPI_DOWNLOAD_NONE:
+            case SPI_DOWNLOAD_ALL:
+                respond = fHer.doCommand("S=$000000");
+                Log.d("Sendmessage", respond);
+                break;
+            case SPI_DOWNLOAD_BOOKMARK:
+                // find hex value for bookmark based on days value
+                String bHexString = getHexValueFromBookmark(lastAddress, bookmarkDays);
+
+                // do B command to set bookmark
+                respond = fHer.doCommand("B=$" + bHexString);
+                Log.d(TAG, respond);
+
+                // do S command with B value
+                respond = fHer.doCommand("S=$" + bHexString);
+                Log.d("SendMessage", respond);
+
+                break;
+            case SPI_DOWNLOAD_DATE:
+                int daysBetween = 0;
+                if (!readFromDate.isEmpty()) {
+                    // find how many days from now to the read from date is
+                    LocalDate fromDate = LocalDate.parse(readFromDate);
+                    LocalDate todaysDate = LocalDate.now();
+
+                    daysBetween = (int) Math.abs(ChronoUnit.DAYS.between(fromDate, todaysDate));
+                }
+
+                // find hex value based on days value
+                String sHexString = getHexValueFromBookmark(lastAddress, daysBetween);
+
+                // do S command with hex value
+                respond = fHer.doCommand("S=$" + sHexString);
+                Log.d("SendMessage", respond);
+        }
 
         int fAddr = 0;
 
