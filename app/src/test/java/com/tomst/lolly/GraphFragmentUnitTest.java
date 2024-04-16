@@ -1,6 +1,7 @@
 package com.tomst.lolly;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 
@@ -66,6 +67,7 @@ public class GraphFragmentUnitTest
     }
 
 
+    @Test
     public void displayData_isCorrect()
     {
         graphfrag.loadCSVFile(testFilename);
@@ -101,6 +103,7 @@ public class GraphFragmentUnitTest
         expected_dendroInfo.get(0).vHA.add(new Entry(dataNum,
                 (float) expected_mer.hum
         ));
+
         ArrayList<ILineDataSet> expected_dataSets =
                 new ArrayList<ILineDataSet>();
         expected_dataSets.add(graphfrag.SetLine(
@@ -112,11 +115,74 @@ public class GraphFragmentUnitTest
                 expected_dendroInfo.get(0).vHA, TPhysValue.vHum
         ));
 
+
         assertEquals(actual_dataSets.size(), expected_dataSets.size());
-        assertEquals(actual_dataSets.get(0), expected_dataSets.get(0));
+        // compare first
+        assertEquals(
+                actual_dataSets.get(0).getLineWidth(),
+                expected_dataSets.get(0).getLineWidth(),
+                0.000001f
+        );
+        assertEquals(
+                expected_dataSets
+                        .get(0)
+                        .getMode()
+                        .compareTo(actual_dataSets.get(0).getMode()),
+                0
+        );
+        assertEquals(
+                actual_dataSets
+                        .get(0)
+                        .getLabel()
+                        .compareTo(expected_dataSets.get(0).getLabel()),
+                0
+        );
+        assertEquals(
+                actual_dataSets
+                        .get(0)
+                        .getAxisDependency()
+                        .compareTo(expected_dataSets.get(0).getAxisDependency()),
+                0
+        );
+        assertEquals(
+                actual_dataSets.get(0).getColor(),
+                expected_dataSets.get(0).getColor()
+        );
+        // compare second
+        assertEquals(
+                actual_dataSets.get(1).getLineWidth(),
+                expected_dataSets.get(1).getLineWidth(),
+                0.000001f
+        );
+        assertEquals(
+                expected_dataSets
+                        .get(1)
+                        .getMode()
+                        .compareTo(actual_dataSets.get(1).getMode()),
+                0
+        );
+        assertEquals(
+                actual_dataSets
+                        .get(1)
+                        .getLabel()
+                        .compareTo(expected_dataSets.get(1).getLabel()),
+                0
+        );
+        assertEquals(
+                actual_dataSets
+                        .get(1)
+                        .getAxisDependency()
+                        .compareTo(expected_dataSets.get(1).getAxisDependency()),
+                0
+        );
+        assertEquals(
+                actual_dataSets.get(1).getColor(),
+                expected_dataSets.get(1).getColor()
+        );
     }
 
 
+    @Test
     public void loadCSVFile_isCorrect()
     {
         // test loading a single data set file
@@ -155,7 +221,61 @@ public class GraphFragmentUnitTest
         ));
 
         assertEquals(actual_dendroInfos.size(), expected_dendroInfo.size());
-        assertEquals(actual_dendroInfos.get(0), expected_dendroInfo.get(0));
+        assertEquals(
+                actual_dendroInfos.get(0).mers.size(),
+                expected_dendroInfo.get(0).mers.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).mers.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).mers.get(i),
+                    expected_dendroInfo.get(0).mers.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT1.size(),
+                expected_dendroInfo.get(0).vT1.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT1.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT1.get(i),
+                    expected_dendroInfo.get(0).vT1.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT2.size(),
+                expected_dendroInfo.get(0).vT2.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT2.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT2.get(i),
+                    expected_dendroInfo.get(0).vT2.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT3.size(),
+                expected_dendroInfo.get(0).vT3.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT3.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT3.get(i),
+                    expected_dendroInfo.get(0).vT3.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vHA.size(),
+                expected_dendroInfo.get(0).vHA.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vHA.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vHA.get(i),
+                    expected_dendroInfo.get(0).vHA.get(i)
+            );
+        }
 
 
         // test loading a merged data set file
@@ -225,17 +345,72 @@ public class GraphFragmentUnitTest
 
 
         assertEquals(actual_dendroInfos.size(), expected_dendroInfo.size());
-        assertEquals(actual_dendroInfos.get(0), expected_dendroInfo.get(0));
-        assertEquals(actual_dendroInfos.get(1), expected_dendroInfo.get(1));
+        assertEquals(
+                actual_dendroInfos.get(0).mers.size(),
+                expected_dendroInfo.get(0).mers.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).mers.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).mers.get(i),
+                    expected_dendroInfo.get(0).mers.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT1.size(),
+                expected_dendroInfo.get(0).vT1.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT1.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT1.get(i),
+                    expected_dendroInfo.get(0).vT1.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT2.size(),
+                expected_dendroInfo.get(0).vT2.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT2.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT2.get(i),
+                    expected_dendroInfo.get(0).vT2.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vT3.size(),
+                expected_dendroInfo.get(0).vT3.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vT3.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vT3.get(i),
+                    expected_dendroInfo.get(0).vT3.get(i)
+            );
+        }
+        assertEquals(
+                actual_dendroInfos.get(0).vHA.size(),
+                expected_dendroInfo.get(0).vHA.size()
+        );
+        for (int i = 0; i < expected_dendroInfo.get(0).vHA.size(); i += 1)
+        {
+            assertEquals(
+                    actual_dendroInfos.get(0).vHA.get(i),
+                    expected_dendroInfo.get(0).vHA.get(i)
+            );
+        }
     }
 
 
+    @Test
     public void loadDmdData_isCorrect()
     {
         // TODO: dunno if this *can* actually be tested
     }
 
 
+    @Test
     public void mergeCSVFiles_isCorrect()
     {
         String[] filenames = {testFilename, otherTestFilename};
@@ -264,6 +439,7 @@ public class GraphFragmentUnitTest
     }
 
 
+    @Test
     public void processeLine_isCorrect()
     {
         // test parsing a serial number and lat long pos
@@ -288,6 +464,13 @@ public class GraphFragmentUnitTest
         expected_mer.hum = Integer.parseInt("892");
         expected_mer.mvs = Integer.parseInt("100");
 
-        assertEquals(actual_mer, expected_mer);
+        assertEquals(actual_mer.Serial, expected_mer.Serial);
+        assertEquals(actual_mer.dtm, expected_mer.dtm);
+        assertEquals(actual_mer.day, expected_mer.day);
+        assertEquals(actual_mer.t1, expected_mer.t1);
+        assertEquals(actual_mer.t2, expected_mer.t2);
+        assertEquals(actual_mer.t3, expected_mer.t3);
+        assertEquals(actual_mer.hum, expected_mer.hum);
+        assertEquals(actual_mer.mvs, expected_mer.mvs);
     }
 }
