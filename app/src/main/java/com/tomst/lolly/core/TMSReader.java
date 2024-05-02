@@ -170,12 +170,15 @@ public class TMSReader extends Thread
 
     private void SendMex(TDevState stat, TMereni mer){
         Message message = handler.obtainMessage();
+
         TInfo info = new TInfo();
         info.stat  = stat;
         info.msg   = "measure";
         info.t1 = mer.t1;
         info.t2 = mer.t2;
         info.t3 = mer.t3;
+        info.humAd = mer.hum;
+
         message.obj = info;
         handler.sendMessage(message);
 
@@ -195,11 +198,11 @@ public class TMSReader extends Thread
 
     public static String aft(String line, String splitChar){
         if (line.length()<1)
-          return "";
+            return "";
 
         String [] str = line.split(splitChar);
         if (str.length >1)
-          return (str[1]);
+            return (str[1]);
         return "";
     }
 
@@ -299,6 +302,7 @@ public class TMSReader extends Thread
 
     public boolean convertMereni(String line)
     {
+        Log.d("|||DEBUG|||", "line: " + line);
         String[] str = line.split(";");
         // 00F;ADC;FF3;183;2
         if (str[1].equals("ADC")) {
@@ -339,8 +343,10 @@ public class TMSReader extends Thread
         String s = str[4].replaceAll("(\\r|\\n)", "");
         int mvs = Integer.parseInt(s,16);
 
+        Log.d("|||DEBUG|||", "hum: " + mer.hum);
+
         if ((mer.dev == TDeviceType.dAD) || (mer.dev == TDeviceType.dAdMicro)) {
-            mer.hum = 0;
+//            mer.hum = 0;
             mer.t1  = convertTemp(tt3);
             mer.t2  = TmpNan;
             mer.t3  = TmpNan;
@@ -581,6 +587,7 @@ public class TMSReader extends Thread
         return(true);
     }
 
+    // gets number of devices
     public void createDeviceList()
     {
         //DeviceUARTContext = getContext();
@@ -659,9 +666,9 @@ public class TMSReader extends Thread
                 case tStart:
                     SendMeasure(TDevState.tStart, "test");
                     if (startFTDI())
-                      devState = TDevState.tWaitForAdapter;
+                        devState = TDevState.tWaitForAdapter;
                     else
-                      SystemClock.sleep(1000);
+                        SystemClock.sleep(1000);
                     break;
 
                 case tWaitForAdapter:
@@ -689,8 +696,8 @@ public class TMSReader extends Thread
                     // duplicita
                     if (s.compareToIgnoreCase(SerialNumber) > 0)
                     {
-                       SendMeasure(TDevState.tSerialDuplicity,"s");
-                       break;
+                        SendMeasure(TDevState.tSerialDuplicity,"s");
+                        break;
                     }
                     devState = TDevState.tHead;
                     break;
@@ -730,7 +737,7 @@ public class TMSReader extends Thread
                 case tInfo:
                     s = fHer.doCommand("W");
                     if (s.indexOf("@W.") ==-1)  // pockej az se domeri
-                       break;
+                        break;
 
                     SystemClock.sleep(600);
                     s = fHer.doCommand("Q");
@@ -745,14 +752,23 @@ public class TMSReader extends Thread
                     if (convertMereni(s) == true)
                     {
                         // nakompiluj vysledky mereni do stringu a odesli
-                       // info.t1 = mer.t1;
-                       // info.t2 = mer.t2;
-                       // info.t3 = mer.t3;
+                        // info.t1 = mer.t1;
+                        // info.t2 = mer.t2;
+                        // info.t3 = mer.t3;
 
                         SendMex(TDevState.tInfo,mer);
                     }
                     //devState = TDevState.tGetTime;
-                    devState = TDevState.tCapacity;
+
+                    // get option for showing graph
+                    boolean showMicro = context.getSharedPreferences(
+                            "save_options", Context.MODE_PRIVATE
+                    ).getBoolean("showmicro", false);
+
+                    // if setting for setupAD is no, move on to capacity
+                    if (!showMicro) {
+                        devState = TDevState.tCapacity;
+                    }
                     break;
 
                 case tCapacity:
@@ -853,6 +869,7 @@ public class TMSReader extends Thread
                 case tWaitInLimbo:
                     try {
                         Thread.sleep(1000); // 1 second
+                        devState = TDevState.tStart;
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -904,7 +921,7 @@ public class TMSReader extends Thread
         }
 
         if (fHer == null)
-           throw new UnsupportedOperationException("startFTDI.fher is null !");
+            throw new UnsupportedOperationException("startFTDI.fher is null !");
 
         fHer.prepcom(); //rts/dtr on/off
         byte[] b = new byte[5];
@@ -1041,7 +1058,7 @@ public class TMSReader extends Thread
             respond = fHer.doCommand("S");
 
             if (respond.length()>1)
-              fAddr = getaddr(respond);
+                fAddr = getaddr(respond);
 
             // Updating the progress bar
 
@@ -1126,7 +1143,7 @@ public class TMSReader extends Thread
         final ZonedDateTime jobStartDateTimeZ = ZonedDateTime.now();
         Instant startTime = jobStartDateTimeZ.toInstant();
         String command =  formatter.format(startTime) + "+"+gmts;;
-       // System.out.println(command);
+        // System.out.println(command);
 
         return command;
     }

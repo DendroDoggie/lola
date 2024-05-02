@@ -161,11 +161,21 @@ public class HomeFragment extends Fragment {
                 });
     }
 
+    // load native C library
+    static {
+        System.loadLibrary("lolly-backend-lib");
+    }
 
+    public native String getExampleStringJNI();
 
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+
+        Log.i("| DEBUG |", "Home Fragment, right above jni string");
+
+        Log.i("| DEBUG |", getExampleStringJNI());
+
     }
 
     private ServiceConnection connection = new ServiceConnection() {
@@ -343,6 +353,7 @@ public class HomeFragment extends Fragment {
 
                 case tInfo:
 
+                    binding.devhumAD.setText(String.valueOf(info.humAd));
                     binding.devt1.setText(String.valueOf(info.t1));
                     binding.devt2.setText(String.valueOf(info.t2));
                     binding.devt3.setText(String.valueOf(info.t3));
