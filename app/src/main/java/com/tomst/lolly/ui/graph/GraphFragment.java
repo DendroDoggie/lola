@@ -180,7 +180,7 @@ public class GraphFragment extends Fragment
         super.onStop();
     }
 
-    private void DisplayData()
+    public void DisplayData()
     {
         Log.d(TAG, "DisplayData");
         boolean firstOfItsKind = true;
@@ -252,7 +252,7 @@ public class GraphFragment extends Fragment
         dendroInfos.get(0).vHA = dmd.getHA();
     }
 
-    private void loadCSVFile(String fileName)
+    public void loadCSVFile(String fileName)
     {
         Toast.makeText(getContext(), "loading", Toast.LENGTH_SHORT).show();
         float dateNum;
@@ -352,7 +352,7 @@ public class GraphFragment extends Fragment
         }
     }
 
-    private TMereni processLine(String line)
+    public TMereni processLine(String line)
     {
         long currTime;
         String[] lineOfFile = line.split(";");
@@ -589,7 +589,7 @@ public class GraphFragment extends Fragment
         return serialNumber;
     }
 
-    private String mergeCSVFiles(String[] fileNames)
+    public String mergeCSVFiles(String[] fileNames)
     {
         Log.d("MERGECALL", "Merge is called");
         String[] strArr;
@@ -684,7 +684,7 @@ public class GraphFragment extends Fragment
         return mergedFileName;
     }
 
-    private LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
+    public LineDataSet SetLine(ArrayList<Entry> vT, TPhysValue val)
     {
         Log.d(TAG, "SetLine");
         int lineColor=0;
@@ -863,11 +863,22 @@ public class GraphFragment extends Fragment
 //    }
 
 
+    public ArrayList<ILineDataSet> getDataSets()
+    {
+        return dataSets;  // TODO: return a copy
+    }
+
+
+    public ArrayList<TDendroInfo> getDendroInfos()
+    {
+        return dendroInfos;  // TODO: return a copy
+    }
+
+
     @Override
     public void onDestroyView()
     {
         super.onDestroyView();
         binding = null;
     }
-
 }
