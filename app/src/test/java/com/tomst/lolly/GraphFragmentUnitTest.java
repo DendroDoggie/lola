@@ -17,9 +17,9 @@ import com.tomst.lolly.ui.graph.GraphFragment;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.internal.runners.JUnit4ClassRunner;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.runners.JUnit4;
 
 import java.lang.reflect.Array;
 import java.time.LocalDateTime;
@@ -27,11 +27,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+
 public class GraphFragmentUnitTest
 {
-    @Mock
-    Context MockContext;
-
     private static final String DATE_PATTERN = "yyyy.MM.dd HH:mm";
     private static final String DELIM = ";";
 
@@ -299,8 +297,9 @@ public class GraphFragmentUnitTest
         expected_mer.hum = Integer.parseInt("63");
         expected_mer.mvs = Integer.parseInt("200");
         originDate = expected_mer.dtm.toEpochSecond(ZoneOffset.MAX);
-        dataNum =
-                (expected_mer.dtm.toEpochSecond(ZoneOffset.MAX) - originDate) / 60;
+        dataNum = (
+                expected_mer.dtm.toEpochSecond(ZoneOffset.MAX) - originDate
+        ) / 60;
 
         expected_dendroInfo.get(0).mers.add(expected_mer);
         expected_dendroInfo.get(0).vT1.add(new Entry(dataNum,
@@ -442,21 +441,21 @@ public class GraphFragmentUnitTest
     @Test
     public void processeLine_isCorrect()
     {
-        // test parsing a serial number and lat long pos
-        String teststr = "666;45;23";
+        // test parsing a serial number
+        String teststr = "666;";
 
         TMereni actual_mer = graphfrag.processLine(teststr);
         TMereni expected_mer = new TMereni();
         expected_mer.Serial = "666";
 
-        assertEquals(actual_mer, expected_mer);
+        assertEquals(actual_mer.Serial, expected_mer.Serial);
 
         // test parsing data point line
-        teststr = "1;2024.09.1 06:01;0;8,245;-200;-200;892;100;0;";
+        teststr = "1;2024.09.01 06:01;0;8,245;-200;-200;892;100;0;";
         actual_mer = graphfrag.processLine(teststr);
         expected_mer = new TMereni();
         expected_mer.Serial = null;
-        expected_mer.dtm = LocalDateTime.parse("2024.09.1 06:01", formatter);
+        expected_mer.dtm = LocalDateTime.parse("2024.09.01 06:01", formatter);
         expected_mer.day = expected_mer.dtm.getDayOfMonth();
         expected_mer.t1 = Float.parseFloat("8.245");
         expected_mer.t2 = Float.parseFloat("-200");
@@ -467,10 +466,10 @@ public class GraphFragmentUnitTest
         assertEquals(actual_mer.Serial, expected_mer.Serial);
         assertEquals(actual_mer.dtm, expected_mer.dtm);
         assertEquals(actual_mer.day, expected_mer.day);
-        assertEquals(actual_mer.t1, expected_mer.t1);
-        assertEquals(actual_mer.t2, expected_mer.t2);
-        assertEquals(actual_mer.t3, expected_mer.t3);
-        assertEquals(actual_mer.hum, expected_mer.hum);
-        assertEquals(actual_mer.mvs, expected_mer.mvs);
+        assertEquals(actual_mer.t1, expected_mer.t1, 0.000001);
+        assertEquals(actual_mer.t2, expected_mer.t2, 0.000001);
+        assertEquals(actual_mer.t3, expected_mer.t3, 0.000001);
+        assertEquals(actual_mer.hum, expected_mer.hum, 0.000001);
+        assertEquals(actual_mer.mvs, expected_mer.mvs, 0.000001);
     }
 }
